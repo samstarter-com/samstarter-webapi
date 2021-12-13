@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentDateTime" Version="2.0.0" />
+    <PackageReference Include="log4net" Version="2.0.11" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SWI.SoftStock.ServerApps.DataAccess2\SWI.SoftStock.ServerApps.DataAccess2.csproj" />
+    <ProjectReference Include="..\SWI.SoftStock.ServerApps.DataModel2\SWI.SoftStock.ServerApps.DataModel2.csproj" />
+    <ProjectReference Include="..\SWI.SoftStock.ServerApps.WebApplicationContracts\SWI.SoftStock.ServerApps.WebApplicationContracts.csproj" />
+    <ProjectReference Include="..\SWI.SoftStock.ServerApps.WebApplicationModel\SWI.SoftStock.ServerApps.WebApplicationModel.csproj" />
+  </ItemGroup>
+
+</Project>

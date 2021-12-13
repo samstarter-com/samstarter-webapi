@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  swi.softstock.webapi.iis2:
+    image: ${DOCKER_REGISTRY-}swisoftstockwebapiiis2
+    build:
+      context: .
+      dockerfile: SWI.SoftStock.WebApi.IIS2/Dockerfile
