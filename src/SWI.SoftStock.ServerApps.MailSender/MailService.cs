@@ -91,12 +91,6 @@ namespace SWI.SoftStock.ServerApps.MailSender
 
         private Response SendNotification(string email, string confirmationPath, Guid companyId)
         {
-            if (companyId == null)
-            {
-                throw new ArgumentNullException(nameof(companyId));
-            }
-
-
             var mailMessage = new MimeMessage();
             mailMessage.From.Add(MailboxAddress.Parse(this.options.SmtpClientOptions.UserName));
             mailMessage.To.Add(MailboxAddress.Parse(email));

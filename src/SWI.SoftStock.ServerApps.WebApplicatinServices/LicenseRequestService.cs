@@ -322,7 +322,6 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             {
                 LicenseRequest licenseRequest =
                     unitOfWork.LicenseRequestRepository.GetAll().SingleOrDefault(l => l.UniqueId == licenseRequestId);
-                bool changed = false;
                 if (licenseRequest == null)
                 {
                     return SendLicenseRequestStatus.NotExist;
@@ -357,7 +356,6 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             {
                 var licenseRequest =
                     unitOfWork.LicenseRequestRepository.GetAll().SingleOrDefault(l => l.UniqueId == request.LicenseRequestId);
-                var changed = false;
                 if (licenseRequest == null)
                 {
                     response.Status = CreateLicenseBasedOnLicenseRequestStatus.NotExist;
