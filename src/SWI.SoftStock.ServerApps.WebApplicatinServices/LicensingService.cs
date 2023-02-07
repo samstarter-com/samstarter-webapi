@@ -88,7 +88,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 					return response;
 				}
 
-				//проверка что количество лицензии больше 0
+				// license number check. is > 0
 				var linkedLicenseCount = license.TotalUsedLicenseCount();
 				if (linkedLicenseCount >= license.Count)
 				{
@@ -213,8 +213,8 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 					return response;
 				}
 
-				//проверка что количество лицензии больше 0
-				var linkedLicenseCount = license.TotalUsedLicenseCount(new[] {machine.Id});
+                // license number check. is > 0
+                var linkedLicenseCount = license.TotalUsedLicenseCount(new[] {machine.Id});
 
 				if (linkedLicenseCount >= license.Count)
 				{
@@ -272,8 +272,8 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 						.Select(m => m.Id)
 						.ToArray();
 
-				// проверка что количество лицензии больше 0
-				var linkedLicenseCount = license.TotalUsedLicenseCount(licenseMachineIds);
+                // license number check. is > 0
+                var linkedLicenseCount = license.TotalUsedLicenseCount(licenseMachineIds);
 				if (linkedLicenseCount + licenseMachineIds.Count() > license.Count)
 				{
 					response.Status = LicenseMachinesStatus.LicenseCountExceeded;
@@ -385,8 +385,8 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 				var licenses = unitOfWork.LicenseRepository.GetAll().Where(l => machineLicenseIds.Contains(l.UniqueId));
 				foreach (var license in licenses)
 				{
-					// проверка что количество лицензии больше 0
-					var linkedLicenseCount = license.TotalUsedLicenseCount(new[] {machine.Id});
+                    // license number check. is > 0
+                    var linkedLicenseCount = license.TotalUsedLicenseCount(new[] {machine.Id});
 					if (linkedLicenseCount >= license.Count)
 					{
 						continue;

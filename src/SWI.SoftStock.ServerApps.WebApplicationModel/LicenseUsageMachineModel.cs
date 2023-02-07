@@ -50,21 +50,12 @@ namespace SWI.SoftStock.ServerApps.WebApplicationModel
 		[Sort("thLastActivity")]
 		public DateTime LastActivity { get; set; }
 
-		/// <summary>
-		///     Количесвто ПО установленного на машине
-		/// </summary>
 		[Sort("thTotalSoftwareCount")]
 		public int TotalSoftwareCount { get; set; }
 
-		/// <summary>
-		///     Количесвто лицензированного ПО установленного на машине
-		/// </summary>
 		[Sort("thLicensedSoftwareCount")]
 		public int LicensedSoftwareCount { get; set; }
 
-		/// <summary>
-		///     Количесвто не лецинзированного ПО установленного на машине
-		/// </summary>
 		[Sort("thUnLicensedSoftwareCount")]
 		public int UnLicensedSoftwareCount { get; set; }
 

@@ -544,7 +544,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             result.SoftwareName = observable.Software.Name;
             result.PublisherName = observable.Software.Publisher != null ? observable.Software.Publisher.Name : string.Empty;
             result.CreatedBy = observable.CreatedByUser.UserName;
-            //todo AppendedMachines -  получать только количество тех машин права на которые имеет пользователь как менеджер
+            //todo AppendedMachines -  get only the number of those machines that the user has rights to as a manage
             result.AppendedMachines = observable.MachineObservedProcesses.Select(mop => mop.Machine).Count();
             return result;
         }

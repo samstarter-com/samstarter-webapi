@@ -26,22 +26,13 @@ namespace SWI.SoftStock.ServerApps.WebApplicationModel
 
 		[Sort("thReleaseType")]
 		public string ReleaseType { get; set; }
-
-		/// <summary>
-		/// Количество инсталляций
-		/// </summary>
+				
 		[Sort("thTotalInstallationCount")]
 		public int TotalInstallationCount { get; set; }
 
-		/// <summary>
-		/// Количество лицензированных инсталляций
-		/// </summary>
 		[Sort("thLicensedInstallationCount")]
 		public int LicensedInstallationCount { get; set; }
 
-		/// <summary>
-		/// Количество не лицензированных инсталляций
-		/// </summary>
 		[Sort("thUnLicensedInstallationCount")]
 		public int UnLicensedInstallationCount { get; set; }
 
@@ -53,9 +44,6 @@ namespace SWI.SoftStock.ServerApps.WebApplicationModel
         [Sort("thDiscoveryDate")]
         public DateTime DiscoveryDate { get; set; }
 
-        /// <summary>
-        /// Лицензирован ли софт, используется в отображение на странице софта на конкретной машине
-        /// </summary>
         [Sort("thHasLicense")]
         public bool HasLicense { get; set; }
 
