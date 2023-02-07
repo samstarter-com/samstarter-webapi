@@ -17,9 +17,9 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 {
     public class PersonalLicenseRequestService : IPersonalLicenseRequestService
     {
-        private readonly MainDbContextFactory dbFactory;
+        private readonly IDbContextFactory<MainDbContext> dbFactory;
 
-        public PersonalLicenseRequestService(MainDbContextFactory dbFactory)
+        public PersonalLicenseRequestService(IDbContextFactory<MainDbContext> dbFactory)
         {
             this.dbFactory = dbFactory ?? throw new ArgumentNullException(nameof(dbFactory));
         }
@@ -33,7 +33,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 Model = new PersonalLicenseRequestCollection(request.Ordering.Order, request.Ordering.Sort)
             };
             var availableStatuses = MapperFromModelToView.LicenseRequestStatusesViewedByPerson();
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             Expression<Func<LicenseRequest, bool>> statusTypeWhere = (l => false);
             Expression<Func<LicenseRequest, bool>> statusTypeWhereNew = (l => l.CurrentStatus == LicenseRequestStatus.SentToUser);
@@ -85,7 +85,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         public async Task<GetNewLicenseRequestCountResponse> GetNewLicenseRequestCount(GetNewLicenseRequestCountRequest request)
         {
             var response = new GetNewLicenseRequestCountResponse();
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             int totalRecords = unitOfWork.LicenseRequestRepository.GetAll().Count(l => l.UserUserId == request.UserId && l.CurrentStatus == LicenseRequestStatus.SentToUser);
             response.Status = GetNewLicenseRequestCountStatus.Success;
@@ -95,7 +95,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public async Task<PersonalLicenseRequestModel> GetLicenseRequestModelByIdAsync(Guid licenseRequestId)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var license = await
                 unitOfWork.LicenseRequestRepository.GetAll().SingleAsync(l => l.UniqueId == licenseRequestId);
@@ -104,7 +104,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public async Task ReceivedAsync(Guid licenseRequestId)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var licenseRequest = await unitOfWork.LicenseRequestRepository.GetAll().SingleAsync(l => l.UniqueId == licenseRequestId);
             if (licenseRequest != null && licenseRequest.CurrentStatus == LicenseRequestStatus.SentToUser)
@@ -123,7 +123,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public AnswerPersonalLicenseRequestStatus Answer(PersonalLicenseRequestAnswerModel model)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var licenseRequest =
                 unitOfWork.LicenseRequestRepository.GetAll().SingleOrDefault(
@@ -174,7 +174,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public PersonalLicenseRequestDocumentModelEx GetDocumentById(Guid id)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             LicenseRequestDocument doc = unitOfWork.LicenseRequestDocumentRepository.GetAll().Single(d => d.UniqueId == id);
             return MapperFromModelToView.MapToPersonalLicenseRequestDocumentModelEx(doc);

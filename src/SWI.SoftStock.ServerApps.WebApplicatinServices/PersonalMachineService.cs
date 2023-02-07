@@ -13,9 +13,9 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 {
     public class PersonalMachineService : IPersonalMachineService
     {
-        private readonly MainDbContextFactory dbFactory;
+        private readonly IDbContextFactory<MainDbContext> dbFactory;
 
-        public PersonalMachineService(MainDbContextFactory dbFactory)
+        public PersonalMachineService(IDbContextFactory<MainDbContext> dbFactory)
         {
             this.dbFactory = dbFactory ?? throw new ArgumentNullException(nameof(dbFactory));
         }
@@ -26,7 +26,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             {
                 Model = new WebApplicationModel.Collections.PersonalMachineCollection(request.Ordering)
             };
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             IEnumerable<PersonalMachineModel> items;
             int totalRecords;
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))

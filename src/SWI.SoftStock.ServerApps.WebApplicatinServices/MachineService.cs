@@ -23,9 +23,9 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
     {
         private readonly ILogger<MachineService> log;
         private readonly CustomUserManager customUserManager;
-        private readonly MainDbContextFactory dbFactory;
+        private readonly IDbContextFactory<MainDbContext> dbFactory;
 
-        public MachineService(ILogger<MachineService> log, CustomUserManager customUserManager, MainDbContextFactory dbFactory)
+        public MachineService(ILogger<MachineService> log, CustomUserManager customUserManager, IDbContextFactory<MainDbContext> dbFactory)
         {
             this.log = log;
             this.customUserManager = customUserManager;
@@ -36,7 +36,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public async Task<MachineModelEx> GetByIdAsync(Guid uniqueId)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             Machine machine = await
                 unitOfWork.MachineRepository.GetAll()
@@ -68,7 +68,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             {
                 Model = new MachineCollection(request.Ordering.Order, request.Ordering.Sort)
             };
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var structureUnit =
                 unitOfWork.StructureUnitRepository.Query(s => s.UniqueId == request.StructureUnitId).Single();
@@ -132,7 +132,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public async Task<MachineLinkToStructureUnitStatus> LinkToStructureUnitAsync(Guid machineId, Guid structureUnitId)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 var machine = unitOfWork.MachineRepository.GetAll().Single(m => m.UniqueId == machineId);
@@ -161,7 +161,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public async Task<MachineLinkToUserStatus> LinkToUserAsync(Guid machineId, Guid userId)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 var machine = unitOfWork.MachineRepository.GetAll().Single(m => m.UniqueId == machineId);
@@ -192,7 +192,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
             var licenseFilterType = (LicenseFilterType)request.FilterType;
             response.Model = new SoftwareMachineCollection(request.Ordering.Order, request.Ordering.Sort);
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var software = unitOfWork.SoftwareRepository.GetAll().SingleOrDefault(s => s.UniqueId == request.SoftwareId);
             if (software == null)
@@ -250,7 +250,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             {
                 Model = new MachineCollection(request.Ordering.Order, request.Ordering.Sort)
             };
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var observable =
                 unitOfWork.ObservableRepository.GetAll().Single(m => m.UniqueId == request.ObservableId);
@@ -278,7 +278,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public MachineDeleteStatus Delete(Guid machineId)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 Machine machine = unitOfWork.MachineRepository.GetAll().Single(m => m.UniqueId == machineId);
@@ -297,7 +297,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         public GetStructureUnitIdResponse GetStructureUnitId(GetStructureUnitIdRequest request)
         {
             GetStructureUnitIdResponse response = new GetStructureUnitIdResponse();
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             Machine machine =
                 unitOfWork.MachineRepository.GetAll().SingleOrDefault(m => m.UniqueId == request.MachineId);
@@ -318,7 +318,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public MachineDisableStatus Disable(Guid machineId)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 Machine machine = unitOfWork.MachineRepository.GetAll().Single(m => m.UniqueId == machineId);
@@ -335,7 +335,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public MachineEnableStatus Enable(Guid machineId)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 Machine machine = unitOfWork.MachineRepository.GetAll().Single(m => m.UniqueId == machineId);

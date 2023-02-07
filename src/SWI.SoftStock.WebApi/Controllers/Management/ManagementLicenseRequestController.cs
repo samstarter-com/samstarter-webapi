@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using SWI.SoftStock.ServerApps.WebApplicationContracts;
 using SWI.SoftStock.ServerApps.WebApplicationContracts.LicenseRequestService.GetNewLicenseRequestCount;
 using System;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using SWI.SoftStock.WebApi.Common;
 

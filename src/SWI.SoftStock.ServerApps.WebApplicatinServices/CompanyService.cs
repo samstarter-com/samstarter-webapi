@@ -1,4 +1,5 @@
-﻿using SWI.SoftStock.ServerApps.DataAccess2;
+﻿using Microsoft.EntityFrameworkCore;
+using SWI.SoftStock.ServerApps.DataAccess2;
 using SWI.SoftStock.ServerApps.DataModel2;
 using SWI.SoftStock.ServerApps.WebApplicationContracts;
 using SWI.SoftStock.ServerApps.WebApplicationContracts.CompanyService.Add;
@@ -11,9 +12,9 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
     public class CompanyService : ICompanyService
     {
-        private readonly MainDbContextFactory dbFactory;
+        private readonly IDbContextFactory<MainDbContext> dbFactory;
 
-        public CompanyService(MainDbContextFactory dbFactory)
+        public CompanyService(IDbContextFactory<MainDbContext> dbFactory)
         {
             this.dbFactory = dbFactory ?? throw new ArgumentNullException(nameof(dbFactory));
         }
@@ -27,7 +28,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 UnitType = UnitType.Company
             };
 
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
 
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             if (!IsCompanyExists(unitOfWork, company.Name))
@@ -46,7 +47,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public bool IsCompanyExists(string name)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
 
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             return IsCompanyExists(unitOfWork, name);

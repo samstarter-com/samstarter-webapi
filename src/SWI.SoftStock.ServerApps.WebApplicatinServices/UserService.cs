@@ -24,9 +24,9 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         private readonly ILogger<UserService> log;
         private readonly CustomRoleManager rolemanager;
         private readonly CustomUserManager customUserManager;
-        private readonly MainDbContextFactory dbFactory;
+        private readonly IDbContextFactory<MainDbContext> dbFactory;
 
-        public UserService(ILogger<UserService> log, CustomRoleManager rolemanager, CustomUserManager customUserManager, MainDbContextFactory dbFactory)
+        public UserService(ILogger<UserService> log, CustomRoleManager rolemanager, CustomUserManager customUserManager, IDbContextFactory<MainDbContext> dbFactory)
         {
             this.log = log;
             this.rolemanager = rolemanager;
@@ -39,7 +39,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         public async Task<IEnumerable<UserModel>> GetForAutocompleteAsync(Guid structureUnitId, string contains)
         {
             contains = contains.ToLower();
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 var user = await rolemanager.FindByNameAsync("User");
@@ -68,7 +68,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             {
                 Model = new UserCollection(request.Ordering.Order, request.Ordering.Sort)
             };
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var userRole = await rolemanager.FindByNameAsync("User");
             Guid userRoleId = userRole.Id;
@@ -153,7 +153,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         public IEnumerable<UserRoleModel> GetUserRoles(Guid structureUnitId, Guid userId)
         {
             var result = new List<UserRoleModel>();
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 IOrderedEnumerable<CustomRole> roles =
@@ -164,25 +164,24 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                         suur => suur.UserUserId == userId && suur.StructureUnit.UniqueId == structureUnitId).Select(
                             suur => suur.RoleRoleId).ToArray();
 
-                foreach (CustomRole r in roles)
+                var userRoleModels = roles.Select(r => new UserRoleModel
                 {
-                    var urm = new UserRoleModel
-                    {
-                        RoleId = r.Id,
-                        StructureUnitId = structureUnitId,
-                        IsInRole = availableRoles.Contains(r.Id),
-                        RoleName = r.Name
-                    };
-                    result.Add(urm);
-                }
+                    RoleId = r.Id,
+                    StructureUnitId = structureUnitId,
+                    IsInRole = availableRoles.Contains(r.Id),
+                    RoleName = r.Name
+                });
+
+                result.AddRange(userRoleModels);
             }
+
             return result;
         }
 
         public async Task<IEnumerable<StructureUnitRoleSimpleModel>> GetUserStructureUnitRolesAsync(Guid userId)
         {
             var result = new List<StructureUnitRoleSimpleModel>();
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 var userRoleId = await rolemanager.Roles.Where(r => r.Name == "User").Select(r => r.Id).SingleAsync();
@@ -211,7 +210,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         public IEnumerable<UserRoleSimpleModel> GetStructureUnitUserRoles(Guid structureUnitId)
         {
             var result = new List<UserRoleSimpleModel>();
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 IEnumerable<Guid> roles =
@@ -264,7 +263,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 }
                 if (request.Roles.Where(r => !r.IsInRole).Any())
                 {
-                    var context = dbFactory.Create();
+                    var context = dbFactory.CreateDbContext();
                     using IUnitOfWork uow = new UnitOfWork(context);
                     foreach (var role in request.Roles.Where(r => !r.IsInRole))
                     {
@@ -282,7 +281,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public async Task<bool> IsUserInRole(Guid userId, string roleName, Guid structureUnitUniqId)
         {
-            var context = dbFactory.Create();
+            var context = dbFactory.CreateDbContext();
             using IUnitOfWork uow = new UnitOfWork(context);
             CustomRole role = await rolemanager.FindByNameAsync(roleName);
             var user = customUserManager.Users.SingleOrDefault(u => u.Id == userId);
@@ -302,7 +301,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             {
                 return UserRoleUpdateStatus.IsLastAdmin;
             }
-            var context = dbFactory.Create();
+            var context = dbFactory.CreateDbContext();
             using (IUnitOfWork uow = new UnitOfWork(context))
             {
                 var user = customUserManager.Users.SingleOrDefault(u => u.Id == userId);
@@ -369,7 +368,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public UserModelEx GetById(Guid userId)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var user = customUserManager.Users.SingleOrDefault(u => u.Id == userId);
             return user != null
@@ -380,7 +379,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         public async Task<UserUpdateStatus> UpdateAsync(UserModelEx model)
         {
             // todo if the Username or Email has changed, then the user will be sent a notification to the new and old Email about who and what has changed
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
 
             var user = customUserManager.Users.SingleOrDefault(u => u.Id == model.UserId);
@@ -419,7 +418,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public async Task<UserDeleteStatus> DeleteById(Guid userId)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var user = customUserManager.Users.SingleOrDefault(u => u.Id == userId);
 
@@ -444,7 +443,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public Guid GetCompanyId(Guid userId)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var user = customUserManager.Users.SingleOrDefault(u => u.Id == userId);
             // todo check that the user user exists, if not then return the status UserNotFound
@@ -499,7 +498,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         private async Task<bool> CheckLastAdminAsync(Guid userId, Guid structureUnitId, IEnumerable<UserRoleModel> roles)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 var role = await rolemanager.FindByNameAsync("Admin");
@@ -538,7 +537,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public async Task<bool> SetRefreshTokenAsync(User user, RefreshToken refreshToken)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             unitOfWork.RefreshTokenRepository.DeleteRange(user.RefreshTokens.ToArray());
             unitOfWork.RefreshTokenRepository.Add(refreshToken);
@@ -548,7 +547,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public async Task<RefreshToken> GetRefreshTokenAsync(Guid userId)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var refreshToken = await unitOfWork.RefreshTokenRepository.GetAll().FirstOrDefaultAsync(rt => rt.UserId == userId);
             return refreshToken;

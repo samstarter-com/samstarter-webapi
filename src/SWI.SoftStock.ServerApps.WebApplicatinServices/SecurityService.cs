@@ -37,7 +37,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         private readonly CustomRoleManager customRoleManager;
 
-        private readonly MainDbContextFactory dbFactory;
+        private readonly IDbContextFactory<MainDbContext> dbFactory;
 
         public SecurityService(
             ILogger<SecurityService> log, 
@@ -46,7 +46,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             ICompanyService companyService, 
             CustomUserManager customUserManager,
             CustomRoleManager customRoleManager,
-            MainDbContextFactory dbFactory)
+            IDbContextFactory<MainDbContext> dbFactory)
         {
             this.log = log;           
             this.structureUnitService = structureUnitService;         
@@ -215,7 +215,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         private bool SetCompanyAccount(int companyId, string accountName)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var company = unitOfWork.StructureUnitRepository.GetById(companyId);
             if (company == null || company.UnitType != UnitType.Company)
@@ -266,7 +266,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         public GetAccountResponse GetAccount(GetAccountRequest request)
         {
             var result = new GetAccountResponse();
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var isAdmin = unitOfWork.StructureUnitUserRoleRepository.GetAll()
                 .Any(sur => sur.UserUserId == request.UserId && sur.Role.Name == "Admin");

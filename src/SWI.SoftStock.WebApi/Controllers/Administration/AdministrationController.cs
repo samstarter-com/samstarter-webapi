@@ -5,7 +5,6 @@ using SWI.SoftStock.ServerApps.WebApplicationContracts.SecurityService;
 using SWI.SoftStock.ServerApps.WebApplicationContracts.SecurityService.GetAccount;
 using SWI.SoftStock.WebApi.Common;
 using System;
-using System.Security.Claims;
 
 namespace SWI.SoftStock.WebApi.Controllers.Administration
 {

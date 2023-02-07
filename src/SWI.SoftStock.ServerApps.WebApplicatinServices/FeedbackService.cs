@@ -1,8 +1,9 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
 using SWI.SoftStock.ServerApps.DataAccess2;
 using SWI.SoftStock.ServerApps.DataModel2;
 using SWI.SoftStock.ServerApps.WebApplicationContracts;
 using SWI.SoftStock.ServerApps.WebApplicationContracts.FeedbackService.Add;
+using System;
 
 namespace SWI.SoftStock.ServerApps.WebApplicationServices
 {
@@ -11,15 +12,15 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
     {
         #region IFeedbackService Members
 
-        private readonly MainDbContextFactory dbFactory;
-        public FeedbackService(MainDbContextFactory dbFactory)
+        private readonly IDbContextFactory<MainDbContext> dbFactory;
+        public FeedbackService(IDbContextFactory<MainDbContext> dbFactory)
         {
             this.dbFactory = dbFactory ?? throw new ArgumentNullException(nameof(dbFactory));
         }
 
         public FeedbackAddResponse Add(FeedbackAddRequest request)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 var feedback = MapperFromViewToModel.MapToFeedback(request.Feedback, request.UserIp);

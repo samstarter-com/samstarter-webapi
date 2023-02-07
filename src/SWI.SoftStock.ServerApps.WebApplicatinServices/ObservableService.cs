@@ -11,13 +11,14 @@ using System.Linq.Expressions;
 
 namespace SWI.SoftStock.ServerApps.WebApplicationServices
 {
+    using Microsoft.EntityFrameworkCore;
     using SWI.SoftStock.ServerApps.WebApplicationContracts.ObservableService.GetAll;
 
     public class ObservableService : IObservableService
     {
-        private readonly MainDbContextFactory dbFactory;
+        private readonly IDbContextFactory<MainDbContext> dbFactory;
 
-        public ObservableService(MainDbContextFactory dbFactory)
+        public ObservableService(IDbContextFactory<MainDbContext> dbFactory)
         {
             this.dbFactory = dbFactory ?? throw new ArgumentNullException(nameof(dbFactory));
         }
@@ -26,7 +27,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public ObservableModelEx GetObservableModelById(Guid observableId)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             Observable observable =
                 unitOfWork.ObservableRepository.GetAll().Single(m => m.UniqueId == observableId);
@@ -41,7 +42,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             {
                 Model = new ObservableExCollection(request.Ordering.Order, request.Ordering.Sort)
             };
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
 
             IQueryable<Observable> query = unitOfWork.ObservableRepository.Query(o => o.Company.UniqueId == request.CompanyId);
@@ -75,7 +76,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         public Guid? Add(ObservableModelEx modelEx, Guid companyId, Guid createdByUserId, out ObservableCreationStatus status)
         {
             Observable observable;
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 var cId = unitOfWork.StructureUnitRepository.GetAll().Single(su => su.UniqueId == companyId).Id;
@@ -104,7 +105,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         public Guid? Append(Guid observableId, Guid machineId, out ObservableAppendStatus status)
         {
             MachineObservedProcess machineObservedProcess;
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 Observable observable =
@@ -150,7 +151,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         public ObservableRemoveStatus Remove(Guid machineId, Guid observableId)
         {
             {
-                var dbContext = dbFactory.Create();
+                var dbContext = dbFactory.CreateDbContext();
                 using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
                 {
                     MachineObservedProcess machineObservedProcess =
@@ -170,8 +171,8 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public ObservableDeleteStatus Delete(Guid observableId)
         {
-            {
-                var dbContext = dbFactory.Create();
+            
+                var dbContext = dbFactory.CreateDbContext();
                 using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
                 {
                     Observable observable =
@@ -189,7 +190,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                     unitOfWork.Save();
                 }
                 return ObservableDeleteStatus.Success;
-            }
+            
         }
 
         #endregion

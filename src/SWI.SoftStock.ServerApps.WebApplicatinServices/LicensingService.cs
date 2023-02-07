@@ -26,9 +26,9 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 {
     public class LicensingService : ILicensingService
 	{
-        private readonly MainDbContextFactory dbFactory;
+        private readonly IDbContextFactory<MainDbContext> dbFactory;
 
-		public LicensingService(MainDbContextFactory dbFactory)
+		public LicensingService(IDbContextFactory<MainDbContext> dbFactory)
         {
             this.dbFactory = dbFactory ?? throw new ArgumentNullException(nameof(dbFactory));
         }
@@ -39,7 +39,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 		{
 			var response = new LicenseSoftwareResponse();
 
-			var dbContext = dbFactory.Create();
+			var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var software =
                 unitOfWork.SoftwareRepository.GetAll().SingleOrDefault(s => s.UniqueId == softwareRequest.SoftwareId);
@@ -120,7 +120,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 		{
 			var response = new UnLicenseSoftwareResponse();
 			var utcNow = DateTime.UtcNow;
-			var dbContext = dbFactory.Create();
+			var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var software =
                 unitOfWork.SoftwareRepository.GetAll().SingleOrDefault(s => s.UniqueId == request.SoftwareId);
@@ -172,7 +172,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 		{
 			var response = new LicenseMachineResponse();
 
-			var dbContext = dbFactory.Create();
+			var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var machine =
                 unitOfWork.MachineRepository.GetAll().SingleOrDefault(m => m.UniqueId == request.MachineId);
@@ -256,7 +256,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 			var licenseMachineUniqueIds = lmResponse.Model.Items.Select(m => m.MachineId);
 			var response = new LicenseMachinesResponse();
 
-			var dbContext = dbFactory.Create();
+			var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var license = unitOfWork.LicenseRepository.GetAll().SingleOrDefault(m => m.UniqueId == request.LicenseId);
             var licenseMachineIds =
@@ -318,7 +318,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 			};
 			var lmResponse = await GetLicensedMachineAsync(licensedMachineRequest);
 			var licenseMachineIds = lmResponse.Model.Items.Select(m => m.MachineId);
-			var dbContext = dbFactory.Create();
+			var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var license =
                 unitOfWork.LicenseRepository.GetAll().SingleOrDefault(m => m.UniqueId == request.LicenseId);
@@ -366,7 +366,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 			var machineLicenseIds = lmResponse.Model.Items.Select(m => m.LicenseId);
 			var response = new LicenseLicenseResponse();
 
-			var dbContext = dbFactory.Create();
+			var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var machine =
                 unitOfWork.MachineRepository.GetAll().SingleOrDefault(m => m.UniqueId == request.MachineId);
@@ -424,7 +424,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 			};
 			var lmResponse = await GetAvailableLicensesByMachineIdAsync(availableLicensesByMachineIdRequest);
 			var licenseLicenseIds = lmResponse.Model.Items.Select(m => m.LicenseId);
-			var dbContext = dbFactory.Create();
+			var dbContext = dbFactory.CreateDbContext();
 			using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
 			{
 				var machine =
@@ -460,7 +460,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 		{
 			var response = new UnLicenseMachineResponse();
 			var utcNow = DateTime.UtcNow;
-			var dbContext = dbFactory.Create();
+			var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var machine =
                 unitOfWork.MachineRepository.GetAll().SingleOrDefault(m => m.UniqueId == request.MachineId);
@@ -510,7 +510,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             {
                 Model = new LicenseMachineCollection(request.Ordering.Order, request.Ordering.Sort)
             };
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var license = unitOfWork.LicenseRepository.GetAll().SingleOrDefault(s => s.UniqueId == request.LicenseId);
             if (license == null)
@@ -612,7 +612,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             {
                 Model = new MachineLicenseCollection(request.Ordering)
             };
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var sus = unitOfWork.StructureUnitRepository.GetAll().
                 Where(o => request.SuIds.Contains(o.UniqueId));

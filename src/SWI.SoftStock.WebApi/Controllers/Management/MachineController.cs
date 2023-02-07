@@ -14,7 +14,6 @@ using SWI.SoftStock.WebApi.Common;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace SWI.SoftStock.WebApi.Controllers.Management

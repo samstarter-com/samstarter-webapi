@@ -12,7 +12,6 @@ using SWI.SoftStock.WebApi.Mapper;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace SWI.SoftStock.WebApi.Controllers.Administrations

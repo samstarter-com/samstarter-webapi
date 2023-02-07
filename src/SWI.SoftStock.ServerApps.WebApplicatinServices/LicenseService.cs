@@ -25,9 +25,9 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
     public class LicenseService : ILicenseService
     {
         private readonly ILogger<LicenseService> log;
-        private readonly MainDbContextFactory dbFactory;
+        private readonly IDbContextFactory<MainDbContext> dbFactory;
 
-        public LicenseService(ILogger<LicenseService> log, MainDbContextFactory dbFactory)
+        public LicenseService(ILogger<LicenseService> log, IDbContextFactory<MainDbContext> dbFactory)
         {
             this.log = log;
             this.dbFactory = dbFactory ?? throw new ArgumentNullException(nameof(dbFactory));
@@ -258,7 +258,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         public GetStructureUnitIdResponse GetStructureUnitId(GetStructureUnitIdRequest request)
         {
             GetStructureUnitIdResponse response = new GetStructureUnitIdResponse();
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             License license =
                 unitOfWork.LicenseRepository.GetAll().SingleOrDefault(m => m.UniqueId == request.LicenseId);
@@ -274,7 +274,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public LicenseModelEx GetLicenseModelExById(Guid id)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var license = unitOfWork.LicenseRepository.GetAll().Single(l => l.UniqueId == id);
             return license != null ? MapperFromModelToView.MapToLicenseModelEx(license) : null;
@@ -282,7 +282,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public LicenseModel GetLicenseModelById(Guid id)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var license = unitOfWork.LicenseRepository.GetAll().Single(l => l.UniqueId == id);
             return license != null ? MapperFromModelToView.MapToLicenseModel<LicenseModel>(license) : null;
@@ -294,7 +294,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             {
                 Model = new LicenseCollection(request.Ordering.Order, request.Ordering.Sort)
             };
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var structureUnit =
                 unitOfWork.StructureUnitRepository.GetAll().Single(s => s.UniqueId == request.StructureUnitId);
@@ -353,7 +353,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             var currentTickIndex = 0;
             var from = response.Model.From;
 
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 var license =
@@ -435,7 +435,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public IEnumerable<DropDownItemModel> GetLicenseTypes()
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var licenseTypes = unitOfWork.LicenseTypeRepository.GetAll().OrderBy(l => l.Id).ToArray();
             return licenseTypes.Select(MapperFromModelToView.MapToLicenseTypeModel);
@@ -463,7 +463,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
             var currentTickIndex = 0;
             var from = request.FromDate.Value;
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 var license =
@@ -534,7 +534,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         {
             var result = new LicenseAddResponse();
             // todo extend LicenseCreationStatus: checks for the existence of LinkedSoftwares entities and others in model
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             License license;
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
@@ -555,7 +555,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public DocumentModelEx GetDocumentById(Guid id)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var doc = unitOfWork.DocumentRepository.GetAll().Single(d => d.UniqueId == id);
             return MapperFromModelToView.MapToDocumentModelEx(doc, true);
@@ -564,7 +564,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         public async Task<LicenseUpdateStatus> UpdateAsync(LicenseModelEx model)
         {
             var now = DateTime.Now;
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var license =
                 unitOfWork.LicenseRepository.GetAll().SingleOrDefault(l => l.UniqueId == model.LicenseId);
@@ -741,7 +741,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public LicenseDeleteStatus DeleteById(Guid licenseId)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var license =
                 unitOfWork.LicenseRepository.GetAll().Single(l => l.UniqueId == licenseId);
@@ -767,7 +767,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public async Task<LicenseLinkToStructureUnitStatus> LinkToStructureUnitAsync(Guid licenseId, Guid structureUnitId)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 var license = unitOfWork.LicenseRepository.GetAll().SingleOrDefault(m => m.UniqueId == licenseId);
@@ -800,7 +800,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             var response = new GetAvailableLicensesBySoftwareIdResponse();
             var now = DateTime.Now;
             response.Model = new ShortLicenseCollection(request.Ordering.Order, request.Ordering.Sort);
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var sus = unitOfWork.StructureUnitRepository.GetAll().Join(request.SuGuids, o => o.UniqueId, i => i, (o, i) => o);
             var software = unitOfWork.SoftwareRepository.GetAll().Single(s => s.UniqueId == request.SoftwareId);

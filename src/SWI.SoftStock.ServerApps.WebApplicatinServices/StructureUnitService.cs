@@ -15,9 +15,9 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
     public class StructureUnitService : IStructureUnitService
     {
         private readonly ILogger<StructureUnitService> log;
-        private readonly MainDbContextFactory dbFactory;
+        private readonly IDbContextFactory<MainDbContext> dbFactory;
 
-        public StructureUnitService(ILogger<StructureUnitService> log, MainDbContextFactory dbFactory)
+        public StructureUnitService(ILogger<StructureUnitService> log, IDbContextFactory<MainDbContext> dbFactory)
         {
             this.log = log;
             this.dbFactory = dbFactory ?? throw new ArgumentNullException(nameof(dbFactory));
@@ -27,7 +27,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public Tuple<int, Guid> GetCompanyIdByStructureUnitId(Guid structureUnitId)
         {
-            using var dbContext = dbFactory.Create();
+            using var dbContext = dbFactory.CreateDbContext();
             var company = dbContext.StructureUnits.
                                 Include(su => su.ParentStructureUnit)
                                 .Single(c => c.UniqueId == structureUnitId)
@@ -38,7 +38,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public StructureUnitModel GetByUniqueId(Guid uniqueId)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
 
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var structureUnit =
@@ -51,7 +51,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public StructureUnitDeleteStatus DeleteByUniqueId(Guid uniqueId)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             StructureUnit structureUnit =
                 unitOfWork.StructureUnitRepository.GetAll().SingleOrDefault(
@@ -79,7 +79,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         public Guid? GetParentUniqueId(Guid uniqueId)
         {
             Guid? result = null;
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 StructureUnit structureUnit =
@@ -122,7 +122,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public async Task<StructureUnitUpdateStatus> Update(StructureUnitModel newStructureUnit)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var existingStructureUnit =
                 unitOfWork.StructureUnitRepository.GetAll().SingleOrDefault(su => su.UniqueId == newStructureUnit.UniqueId);
@@ -183,7 +183,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 selectedStructureUnit)
         {
             IList<StructureUnitTreeItemModel> result = new List<StructureUnitTreeItemModel>();
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             selectedStructureUnit = null;
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
@@ -230,7 +230,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public Tuple<int, Guid> GetCompanyIdByName(string companyName)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
 
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             StructureUnit company = unitOfWork.StructureUnitRepository.GetAll()
@@ -240,7 +240,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public int GetIdByUniqueId(Guid structureUnitId)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
 
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             StructureUnit su = unitOfWork.StructureUnitRepository.GetAll()
@@ -251,7 +251,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         public IEnumerable<Guid> GetStructureUnitsGuid(Guid userId, string[] roles)
         {
             IList<Guid> result = new List<Guid>();
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 {
@@ -298,7 +298,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         private void Add(StructureUnit structureUnit)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
 
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             unitOfWork.StructureUnitRepository.Add(structureUnit);
@@ -317,7 +317,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             status = StructureUnitCreationStatus.Success;
             StructureUnit parent = null;
 
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 parent =
@@ -375,7 +375,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         /// <returns></returns>
         private bool IsUnique(StructureUnit structureUnit)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             StructureUnit existStructureUnit =
                 unitOfWork.StructureUnitRepository.GetAll().

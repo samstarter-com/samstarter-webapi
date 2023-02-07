@@ -15,10 +15,8 @@ using SWI.SoftStock.ServerApps.WebApplicationServices;
 using SWI.SoftStock.ServerApps.WebApplicationServices.Mappers;
 using SWI.SoftStock.WebApi.Common;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace SWI.SoftStock.WebApi.Controllers.Management
@@ -273,8 +271,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
             [FromQuery] PagingModel paging,
             [FromQuery] OrderingModel ordering,
             int status)
-        {
-           
+        {           
             var suGuids = this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(UserId), new[] { "Manager" });
 
             var request = new GetLicensedMachineRequest();

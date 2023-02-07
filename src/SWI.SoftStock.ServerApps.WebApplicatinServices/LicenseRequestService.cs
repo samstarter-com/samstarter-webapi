@@ -23,9 +23,9 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
     {
         private readonly ILogger<LicenseRequestService> log;
         private readonly CustomUserManager customUserManager;
-        private readonly MainDbContextFactory dbFactory;
+        private readonly IDbContextFactory<MainDbContext> dbFactory;
 
-        public LicenseRequestService(ILogger<LicenseRequestService> log, CustomUserManager customUserManager, MainDbContextFactory dbFactory)
+        public LicenseRequestService(ILogger<LicenseRequestService> log, CustomUserManager customUserManager, IDbContextFactory<MainDbContext> dbFactory)
         {
             this.log = log;
             this.customUserManager = customUserManager;
@@ -37,7 +37,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         public NewLicenseRequestResponse GetNewLicenseRequest(NewLicenseRequestRequest request)
         {
             var result = new NewLicenseRequestResponse();
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             Machine machine = unitOfWork.MachineRepository.GetAll().SingleOrDefault(l => l.UniqueId == request.MachineId);
             if (machine == null)
@@ -94,7 +94,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         public Guid? Add(NewLicenseRequestModel model, Guid managerId, bool sending, out SaveLicenseRequestStatus status)
         {
             LicenseRequest licenseRequest;
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 Machine machine =
@@ -159,7 +159,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public async Task<LicenseRequestModel> GetLicenseRequestModelByIdAsync(Guid licenseRequestId)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var license = await unitOfWork.LicenseRequestRepository.GetAll().SingleAsync(l => l.UniqueId == licenseRequestId);
             return license != null ? MapperFromModelToView.MapToManagerLicenseRequestModel(license) : null;
@@ -172,7 +172,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 Model = new LicenseRequestCollection(request.Ordering.Order, request.Ordering.Sort)
             };
             LicenseRequestStatus[] availableStatuses = MapperFromModelToView.LicenseRequestStatusesViewedByManager();
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             Expression<Func<LicenseRequest, bool>> statusTypeWhere = (l => false);
             Expression<Func<LicenseRequest, bool>> statusTypeWhereNew = (l => l.CurrentStatus == LicenseRequestStatus.New);
@@ -258,7 +258,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public UpdateLicenseRequestStatus Update(LicenseRequestModel model, bool sending)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             LicenseRequest licenseRequest =
                 unitOfWork.LicenseRequestRepository.GetAll().SingleOrDefault(
@@ -302,7 +302,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public LicenseRequestDocumentModelEx GetDocumentById(Guid id)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             LicenseRequestDocument doc =
                 unitOfWork.LicenseRequestDocumentRepository.GetAll().Single(d => d.UniqueId == id);
@@ -311,7 +311,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public SendLicenseRequestStatus SendToUser(Guid licenseRequestId)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             LicenseRequest licenseRequest =
                 unitOfWork.LicenseRequestRepository.GetAll().SingleOrDefault(l => l.UniqueId == licenseRequestId);
@@ -342,7 +342,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         public async Task<CreateLicenseBasedOnLicenseRequestResponse> CreateLicenseAsync(CreateLicenseBasedOnLicenseRequestRequest request)
         {
             var response = new CreateLicenseBasedOnLicenseRequestResponse {LicenseId = null};
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             License license;
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
@@ -381,7 +381,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public async Task ReceivedAsync(Guid licenseRequestId)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var licenseRequest = await unitOfWork.LicenseRequestRepository.GetAll().SingleAsync(l => l.UniqueId == licenseRequestId);
             if (licenseRequest != null && licenseRequest.CurrentStatus == LicenseRequestStatus.SentToManager)
@@ -400,7 +400,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public ArchiveLicenseRequestStatus Archive(Guid licenseRequestId)
         {
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 LicenseRequest licenseRequest =
@@ -424,7 +424,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         public async Task<GetNewLicenseRequestCountResponse> GetNewLicenseRequestCount(GetNewLicenseRequestCountRequest request)
         {
             var response = new GetNewLicenseRequestCountResponse();
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             int totalRecords = unitOfWork.LicenseRequestRepository.GetAll().Count(l => l.UserUserId1 == request.UserId && l.CurrentStatus == LicenseRequestStatus.SentToManager);
             response.Status = GetNewLicenseRequestCountStatus.Success;

@@ -17,9 +17,9 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 {
     public class SoftwareService : ISoftwareService
     {
-        private readonly MainDbContextFactory dbFactory;
+        private readonly IDbContextFactory<MainDbContext> dbFactory;
 
-        public SoftwareService(MainDbContextFactory dbFactory)
+        public SoftwareService(IDbContextFactory<MainDbContext> dbFactory)
         {
             this.dbFactory = dbFactory ?? throw new ArgumentNullException(nameof(dbFactory));
         }
@@ -171,7 +171,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         public async Task<GetByIdResponse> GetByIdAsync(GetByIdRequest request)
         {
             var response = new GetByIdResponse();
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
 
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             SoftwareModel detail;
@@ -235,7 +235,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             {
                 Model = new SoftwareCollection(request.Ordering.Order, request.Ordering.Sort)
             };
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var structureUnit = await
                 unitOfWork.StructureUnitRepository.Query(s => s.UniqueId == request.StructureUnitId).SingleAsync();
@@ -338,7 +338,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             bool? includeSubUnits = false)
         {
             contains = contains.ToLower();
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var structureUnit =
                 unitOfWork.StructureUnitRepository.Query(su => su.UniqueId == structureUnitId).Single();
@@ -382,7 +382,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             {
                 Model = new MachineSoftwareCollection(request.Ordering)
             };
-            var dbContext = dbFactory.Create();
+            var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var machine =
                 unitOfWork.MachineRepository.GetAll()

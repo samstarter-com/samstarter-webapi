@@ -5,7 +5,6 @@ using SWI.SoftStock.ServerApps.DataModel2.Identity;
 using SWI.SoftStock.ServerApps.WebApplicationContracts;
 using SWI.SoftStock.ServerApps.WebApplicationModel;
 using System;
-using System.Security.Claims;
 using SWI.SoftStock.WebApi.Common;
 
 namespace SWI.SoftStock.WebApi.Controllers.Management

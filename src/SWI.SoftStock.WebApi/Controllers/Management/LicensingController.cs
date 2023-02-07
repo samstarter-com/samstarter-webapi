@@ -8,7 +8,6 @@ using SWI.SoftStock.ServerApps.WebApplicationContracts.LicensingService.UnLicens
 using SWI.SoftStock.ServerApps.WebApplicationContracts.LicensingService.UnLicenseMachines;
 using SWI.SoftStock.WebApplications.Main.Mappers;
 using System;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

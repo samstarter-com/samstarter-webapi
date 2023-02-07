@@ -9,7 +9,6 @@ using SWI.SoftStock.ServerApps.WebApplicationServices;
 using SWI.SoftStock.WebApi.Common;
 using SWI.SoftStock.WebApi.Mapper;
 using System;
-using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace SWI.SoftStock.WebApi.Controllers.Personal

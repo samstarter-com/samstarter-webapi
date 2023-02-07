@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -21,10 +22,10 @@ namespace SWI.SoftStock.ServerApps.MailSender
                 f.GetService<MailServiceOptions>(),
                 f.GetService<IVerificationService>(),
                 new CustomUserManager(
-                    new CustomUserStore(f.GetService<MainDbContextFactory>().Create()),
+                    new CustomUserStore(f.GetService<IDbContextFactory<MainDbContext>>().CreateDbContext()),
                     f.GetService<IOptions<IdentityOptions>>(),
                     new PasswordHasher<User>(),
-                   null,
+                    null,
                     null,
                     null,
                     null,

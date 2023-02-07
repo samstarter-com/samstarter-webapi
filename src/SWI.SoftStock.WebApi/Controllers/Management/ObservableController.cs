@@ -12,7 +12,6 @@ using SWI.SoftStock.ServerApps.WebApplicationServices.Mappers;
 using SWI.SoftStock.WebApi.Common;
 using System;
 using System.Linq;
-using System.Security.Claims;
 
 namespace SWI.SoftStock.WebApi.Controllers.Management
 {
