@@ -10,19 +10,12 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices.Mappers
     {
         public static string GetErrorMessage(GetSoftwaresByMachineIdStatus status)
         {
-            string result;
-            switch (status)
+            string result = status switch
             {
-                case GetSoftwaresByMachineIdStatus.MachineNotFound:
-                    result = "Machine not found";
-                    break;
-                case GetSoftwaresByMachineIdStatus.MachineIsDisabled:
-                    result = "Machine is deleted";
-                    break;
-                default:
-                    result = "Unknown error";
-                    break;
-            }
+                GetSoftwaresByMachineIdStatus.MachineNotFound => "Machine not found",
+                GetSoftwaresByMachineIdStatus.MachineIsDisabled => "Machine is deleted",
+                _ => "Unknown error",
+            };
             return result;
         }
     }

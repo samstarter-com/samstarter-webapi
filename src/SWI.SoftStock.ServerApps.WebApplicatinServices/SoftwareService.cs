@@ -173,81 +173,95 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             var response = new GetByIdResponse();
             var dbContext = dbFactory.Create();
 
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
+            SoftwareModel detail;
+            var software = await unitOfWork.SoftwareRepository.GetAll().SingleAsync(s => s.UniqueId == request.Id);
+            if (request.StructureUnitId.HasValue)
             {
-                SoftwareModel detail;
-                var software = await unitOfWork.SoftwareRepository.GetAll().SingleAsync(s => s.UniqueId == request.Id);
-                if (request.StructureUnitId.HasValue)
+                var structureUnit = await
+                    unitOfWork.StructureUnitRepository.Query(s => s.UniqueId == request.StructureUnitId)
+                        .SingleAsync();
+                IQueryable<Machine> queryMachine;
+
+                if (!request.IncludeItemsOfSubUnits)
                 {
-                    var structureUnit = await
-                        unitOfWork.StructureUnitRepository.Query(s => s.UniqueId == request.StructureUnitId)
-                            .SingleAsync();
-                    IQueryable<Machine> queryMachine;
-
-                    if (!request.IncludeItemsOfSubUnits)
-                    {
-                        queryMachine =
-                            unitOfWork.MachineRepository.Query(
-                                m => m.CurrentLinkedStructureUnitId == structureUnit.Id && !m.IsDisabled);
-                    }
-                    else
-                    {
-                        var structureUnitIds = structureUnit.Descendants(sud => sud.ChildStructureUnits)
-                            .Select(su => su.Id);
-                        queryMachine = unitOfWork.MachineRepository.Query(m => !m.IsDisabled).Join(structureUnitIds,
-                            m => m.CurrentLinkedStructureUnitId,
-                            su => su,
-                            (m, su) => m);
-                    }
-
-                    var machineSoftwares = queryMachine.SelectMany(lm => lm.MachineSoftwares)
-                        .Where(ms => ms.SoftwareId == software.Id).ToArray();
-                    detail = MapperFromModelToView.MapToSoftwareModel<SoftwareModel>(software, machineSoftwares);
+                    queryMachine =
+                        unitOfWork.MachineRepository.Query(
+                            m => m.CurrentLinkedStructureUnitId == structureUnit.Id && !m.IsDisabled);
                 }
                 else
                 {
-                    detail = MapperFromModelToView.MapToSoftwareModel<SoftwareModel>(software);
+                    var structureUnitIds = structureUnit.Descendants(sud => sud.ChildStructureUnits)
+                        .Select(su => su.Id);
+                    queryMachine = unitOfWork.MachineRepository.Query(m => !m.IsDisabled).Join(structureUnitIds,
+                        m => m.CurrentLinkedStructureUnitId,
+                        su => su,
+                        (m, su) => m);
                 }
 
-                var queryObservable =
-                    unitOfWork.ObservableRepository.Query(o =>
-                        o.Company.UniqueId == request.CompanyId && o.SoftwareId == software.Id);
-
-                var allowedStructureUnitIds = request.UserStructureUnitIds
-                    .Select(suId => unitOfWork.StructureUnitRepository.GetAll().Single(s => s.UniqueId == suId))
-                    .SelectMany(su => su.Descendants(sud => sud.ChildStructureUnits)).Select(su => su.Id);
-
-                var licenses =
-                    unitOfWork.LicenseRepository.Query(l =>
-                        allowedStructureUnitIds.Contains(l.StructureUnitId) &&
-                        l.LicenseSoftwares.Select(ls => ls.SoftwareId).Contains(software.Id));
-
-                detail.ObservableProcesses =
-                    queryObservable.Select(MapperFromModelToView.MapToObservableModel).ToArray();
-                detail.Licenses = licenses.Select(l => MapperFromModelToView.MapToLicenseModel<LicenseModel>(l))
-                    .ToArray();
-                response.Detail = detail;
-                return response;
+                var machineSoftwares = queryMachine.SelectMany(lm => lm.MachineSoftwares)
+                    .Where(ms => ms.SoftwareId == software.Id).ToArray();
+                detail = MapperFromModelToView.MapToSoftwareModel<SoftwareModel>(software, machineSoftwares);
             }
+            else
+            {
+                detail = MapperFromModelToView.MapToSoftwareModel<SoftwareModel>(software);
+            }
+
+            var queryObservable =
+                unitOfWork.ObservableRepository.Query(o =>
+                    o.Company.UniqueId == request.CompanyId && o.SoftwareId == software.Id);
+
+            var allowedStructureUnitIds = request.UserStructureUnitIds
+                .Select(suId => unitOfWork.StructureUnitRepository.GetAll().Single(s => s.UniqueId == suId))
+                .SelectMany(su => su.Descendants(sud => sud.ChildStructureUnits)).Select(su => su.Id);
+
+            var licenses =
+                unitOfWork.LicenseRepository.Query(l =>
+                    allowedStructureUnitIds.Contains(l.StructureUnitId) &&
+                    l.LicenseSoftwares.Select(ls => ls.SoftwareId).Contains(software.Id));
+
+            detail.ObservableProcesses =
+                queryObservable.Select(MapperFromModelToView.MapToObservableModel).ToArray();
+            detail.Licenses = licenses.Select(l => MapperFromModelToView.MapToLicenseModel<LicenseModel>(l))
+                .ToArray();
+            response.Detail = detail;
+            return response;
         }
 
         public async Task<GetByStructureUnitIdResponse> GetByStructureUnitIdAsync(GetByStructureUnitIdRequest request)
         {
-            var response = new GetByStructureUnitIdResponse();
-            response.Model = new SoftwareCollection(request.Ordering.Order, request.Ordering.Sort);
-            var dbContext = dbFactory.Create();
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
+            var response = new GetByStructureUnitIdResponse
             {
-                var structureUnit = await
-                    unitOfWork.StructureUnitRepository.Query(s => s.UniqueId == request.StructureUnitId).SingleAsync();
-                IEnumerable<int> structureUnitIds;
-                IQueryable<SoftwareCurrentLinkedStructureUnitReadOnlyGrouped> query;
-                if (!request.IncludeItemsOfSubUnits)
-                {
-                    query = unitOfWork.SoftwareCurrentLinkedStructureUnitReadOnlyRepository.Query(
-                            m => m.CurrentLinkedStructureUnitId == structureUnit.Id)
-                        .GroupBy(ms => ms.SoftwareId)
-                        .Select(ms => new SoftwareCurrentLinkedStructureUnitReadOnlyGrouped()
+                Model = new SoftwareCollection(request.Ordering.Order, request.Ordering.Sort)
+            };
+            var dbContext = dbFactory.Create();
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
+            var structureUnit = await
+                unitOfWork.StructureUnitRepository.Query(s => s.UniqueId == request.StructureUnitId).SingleAsync();
+            IEnumerable<int> structureUnitIds;
+            IQueryable<SoftwareCurrentLinkedStructureUnitReadOnlyGrouped> query;
+            if (!request.IncludeItemsOfSubUnits)
+            {
+                query = unitOfWork.SoftwareCurrentLinkedStructureUnitReadOnlyRepository.Query(
+                        m => m.CurrentLinkedStructureUnitId == structureUnit.Id)
+                    .GroupBy(ms => ms.SoftwareId)
+                    .Select(ms => new SoftwareCurrentLinkedStructureUnitReadOnlyGrouped()
+                    {
+                        SoftwareId = ms.Key,
+                        SoftwaresTotalCount = ms.Sum(mss => mss.SoftwaresTotalCount),
+                        SoftwaresIsExpiredCount = ms.Sum(mss => mss.SoftwaresIsExpiredLicenseCount),
+                        SoftwaresIsActiveCount = ms.Sum(mss => mss.SoftwaresIsActiveCount),
+                        SoftwaresUnlicensedCount = ms.Sum(mss => mss.SoftwaresUnlicensedCount)
+                    });
+            }
+            else
+            {
+                structureUnitIds = structureUnit.Descendants(sud => sud.ChildStructureUnits).Select(su => su.Id);
+                query = unitOfWork.SoftwareCurrentLinkedStructureUnitReadOnlyRepository
+                    .Query(m => structureUnitIds.Contains(m.CurrentLinkedStructureUnitId))
+                    .GroupBy(ms => ms.SoftwareId).Select(ms =>
+                        new SoftwareCurrentLinkedStructureUnitReadOnlyGrouped()
                         {
                             SoftwareId = ms.Key,
                             SoftwaresTotalCount = ms.Sum(mss => mss.SoftwaresTotalCount),
@@ -255,60 +269,44 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                             SoftwaresIsActiveCount = ms.Sum(mss => mss.SoftwaresIsActiveCount),
                             SoftwaresUnlicensedCount = ms.Sum(mss => mss.SoftwaresUnlicensedCount)
                         });
-                }
-                else
-                {
-                    structureUnitIds = structureUnit.Descendants(sud => sud.ChildStructureUnits).Select(su => su.Id);
-                    query = unitOfWork.SoftwareCurrentLinkedStructureUnitReadOnlyRepository
-                        .Query(m => structureUnitIds.Contains(m.CurrentLinkedStructureUnitId))
-                        .GroupBy(ms => ms.SoftwareId).Select(ms =>
-                            new SoftwareCurrentLinkedStructureUnitReadOnlyGrouped()
-                            {
-                                SoftwareId = ms.Key,
-                                SoftwaresTotalCount = ms.Sum(mss => mss.SoftwaresTotalCount),
-                                SoftwaresIsExpiredCount = ms.Sum(mss => mss.SoftwaresIsExpiredLicenseCount),
-                                SoftwaresIsActiveCount = ms.Sum(mss => mss.SoftwaresIsActiveCount),
-                                SoftwaresUnlicensedCount = ms.Sum(mss => mss.SoftwaresUnlicensedCount)
-                            });
-                }
-
-                var filter = this.GetFilter(request);
-                var filteredSoftwares = unitOfWork.SoftwareRepository.GetAll().Include(s => s.Publisher).Where(filter);
-
-                query = filteredSoftwares.Join(
-                    query,
-                    o => o.Id,
-                    i => i.SoftwareId,
-                    (o, i) => new SoftwareCurrentLinkedStructureUnitReadOnlyGrouped()
-                    {
-                        SoftwareId = i.SoftwareId,
-                        Software = o,
-                        PublisherName= o.Publisher.Name,
-                        SoftwaresTotalCount = i.SoftwaresTotalCount,
-                        SoftwaresIsExpiredCount = i.SoftwaresIsExpiredCount,
-                        SoftwaresIsActiveCount = i.SoftwaresIsActiveCount,
-                        SoftwaresUnlicensedCount = i.SoftwaresUnlicensedCount
-                    });
-
-                var totalRecords = query.Count();
-
-                var keySelector = this.GetByStructureUnitIdOrderingSelecetor(request.Ordering.Sort);
-                var softwares =
-                    (string.IsNullOrEmpty(request.Ordering.Order) || request.Ordering.Order.ToLower() != "desc")
-                        ? query.OrderBy(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize)
-                            .Take(request.Paging.PageSize)
-                        : query.OrderByDescending(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize)
-                            .Take(request.Paging.PageSize);
-
-                var items =
-                    softwares.Select(
-                        sms =>
-                            MapperFromModelToView.MapToSoftwareModel<SoftwareModel>(sms.Software, sms)).ToArray();
-                response.Model.Items = items;
-                response.Model.TotalRecords = totalRecords;
-                response.Status = GetByStructureUnitIdStatus.Success;
-                return response;
             }
+
+            var filter = this.GetFilter(request);
+            var filteredSoftwares = unitOfWork.SoftwareRepository.GetAll().Include(s => s.Publisher).Where(filter);
+
+            query = filteredSoftwares.Join(
+                query,
+                o => o.Id,
+                i => i.SoftwareId,
+                (o, i) => new SoftwareCurrentLinkedStructureUnitReadOnlyGrouped()
+                {
+                    SoftwareId = i.SoftwareId,
+                    Software = o,
+                    PublisherName = o.Publisher.Name,
+                    SoftwaresTotalCount = i.SoftwaresTotalCount,
+                    SoftwaresIsExpiredCount = i.SoftwaresIsExpiredCount,
+                    SoftwaresIsActiveCount = i.SoftwaresIsActiveCount,
+                    SoftwaresUnlicensedCount = i.SoftwaresUnlicensedCount
+                });
+
+            var totalRecords = query.Count();
+
+            var keySelector = this.GetByStructureUnitIdOrderingSelecetor(request.Ordering.Sort);
+            var softwares =
+                (string.IsNullOrEmpty(request.Ordering.Order) || request.Ordering.Order.ToLower() != "desc")
+                    ? query.OrderBy(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize)
+                        .Take(request.Paging.PageSize)
+                    : query.OrderByDescending(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize)
+                        .Take(request.Paging.PageSize);
+
+            var items =
+                softwares.Select(
+                    sms =>
+                        MapperFromModelToView.MapToSoftwareModel<SoftwareModel>(sms.Software, sms)).ToArray();
+            response.Model.Items = items;
+            response.Model.TotalRecords = totalRecords;
+            response.Status = GetByStructureUnitIdStatus.Success;
+            return response;
         }
 
         private Expression<Func<Software, bool>> GetFilter(GetByStructureUnitIdRequest request)
@@ -341,40 +339,40 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         {
             contains = contains.ToLower();
             var dbContext = dbFactory.Create();
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
+            var structureUnit =
+                unitOfWork.StructureUnitRepository.Query(su => su.UniqueId == structureUnitId).Single();
+
+            IQueryable<Machine> machines;
+
+            if (includeSubUnits.HasValue && includeSubUnits.Value)
             {
-                var structureUnit =
-                    unitOfWork.StructureUnitRepository.Query(su => su.UniqueId == structureUnitId).Single();
-
-                IQueryable<Machine> machines;
-
-                if (includeSubUnits.HasValue && includeSubUnits.Value)
-                {
-                    var structureUnitIds =
-                        structureUnit.Descendants(sud => sud.ChildStructureUnits).Select(su => su.Id);
-                    machines = unitOfWork.MachineRepository.Query(m => !m.IsDisabled)
-                        .Where(m => structureUnitIds.Contains(m.CurrentLinkedStructureUnitId));
-                }
-                else
-                {
-                    machines = unitOfWork.MachineRepository.Query(m => !m.IsDisabled)
-                        .Where(m => m.CurrentLinkedStructureUnitId == structureUnit.Id);
-                }
-
-                var query = machines
-                    .SelectMany(m => m.MachineSoftwares)
-                    .Select(ms => ms.Software)
-                    .Where(s => s.Name.ToLower().Contains(contains) || s.Version.ToLower().Contains(contains))
-                    .Distinct();
-
-                var softwares = query.OrderBy(u => u.Name);
-                var softwareModels =
-                    Enumerable.ToArray(softwares.Select(MapperFromModelToView.MapToSoftwareModel<SoftwareModel>));
-                var result = new SoftwareCollection(string.Empty, string.Empty);
-                result.Items = softwareModels;
-                result.TotalRecords = softwareModels.Count();
-                return result;
+                var structureUnitIds =
+                    structureUnit.Descendants(sud => sud.ChildStructureUnits).Select(su => su.Id);
+                machines = unitOfWork.MachineRepository.Query(m => !m.IsDisabled)
+                    .Where(m => structureUnitIds.Contains(m.CurrentLinkedStructureUnitId));
             }
+            else
+            {
+                machines = unitOfWork.MachineRepository.Query(m => !m.IsDisabled)
+                    .Where(m => m.CurrentLinkedStructureUnitId == structureUnit.Id);
+            }
+
+            var query = machines
+                .SelectMany(m => m.MachineSoftwares)
+                .Select(ms => ms.Software)
+                .Where(s => s.Name.ToLower().Contains(contains) || s.Version.ToLower().Contains(contains))
+                .Distinct();
+
+            var softwares = query.OrderBy(u => u.Name);
+            var softwareModels =
+                Enumerable.ToArray(softwares.Select(MapperFromModelToView.MapToSoftwareModel<SoftwareModel>));
+            var result = new SoftwareCollection(string.Empty, string.Empty)
+            {
+                Items = softwareModels,
+                TotalRecords = softwareModels.Count()
+            };
+            return result;
         }
 
         public GetSoftwaresByMachineIdResponse GetByMachineId(GetSoftwaresByMachineIdRequest request)
@@ -385,142 +383,140 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 Model = new MachineSoftwareCollection(request.Ordering)
             };
             var dbContext = dbFactory.Create();
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
+            var machine =
+                unitOfWork.MachineRepository.GetAll()
+                    .Include(m => m.CurrentLinkedStructureUnit)
+                    .SingleOrDefault(m => m.UniqueId == request.MachineId);
+
+            if (machine == null)
             {
-                var machine =
-                    unitOfWork.MachineRepository.GetAll()
-                        .Include(m => m.CurrentLinkedStructureUnit)
-                        .SingleOrDefault(m => m.UniqueId == request.MachineId);
-
-                if (machine == null)
-                {
-                    response.Status = GetSoftwaresByMachineIdStatus.MachineNotFound;
-                    return response;
-                }
-
-                if (machine.IsDisabled)
-                {
-                    response.Status = GetSoftwaresByMachineIdStatus.MachineIsDisabled;
-                    return response;
-                }
-
-                response.Model.MachineName = machine.Name;
-                response.Model.UserId = machine.CurrentUserId;
-
-                Expression<Func<MachineSoftwareLicenseReadOnly, bool>> filter = ms => true;
-                Expression<Func<MachineSoftwareLicenseReadOnly, bool>> filterLicensed = ms => ms.IsActive;
-                Expression<Func<MachineSoftwareLicenseReadOnly, bool>> filterUnlicensed = ms => !ms.LicenseId.HasValue;
-                Expression<Func<MachineSoftwareLicenseReadOnly, bool>> filterExpiredLicensed =
-                    ms => ms.LicenseId.HasValue && !ms.IsActive;
-
-                var expressions = new List<Expression<Func<MachineSoftwareLicenseReadOnly, bool>>>();
-
-                if (licenseFilterType.HasFlag(LicenseFilterType.Licensed))
-                {
-                    expressions.Add(filterLicensed);
-                }
-
-                if (licenseFilterType.HasFlag(LicenseFilterType.Unlicensed))
-                {
-                    expressions.Add(filterUnlicensed);
-                }
-
-                if (licenseFilterType.HasFlag(LicenseFilterType.ExpiredLicensed))
-                {
-                    expressions.Add(filterExpiredLicensed);
-                }
-
-                if (expressions.Count > 0)
-                {
-                    filter = ExpressionExtension.BuildOr(expressions);
-                }
-
-                var query = unitOfWork.MachineSoftwareLicenseReadOnlyRepository.GetAll()
-                    .Where(s => s.MachineId == machine.Id)
-                    .Where(filter);
-
-                if (request.FilterItems.ContainsKey("Name") && !string.IsNullOrEmpty(request.FilterItems["Name"]))
-                {
-                    var contains = request.FilterItems["Name"];
-                    query = query.Where(ms => ms.Software.Name.Contains(contains));
-                }
-
-                if (request.FilterItems.ContainsKey("PublisherName") &&
-                    !string.IsNullOrEmpty(request.FilterItems["PublisherName"]))
-                {
-                    var contains = request.FilterItems["PublisherName"];
-                    query =
-                        query.Where(
-                            ms =>
-                                (ms.Software.Publisher != null && ms.Software.Publisher.Name.Contains(contains)));
-                }
-
-                if (request.FilterItems.ContainsKey("Name") && !string.IsNullOrEmpty(request.FilterItems["Name"]))
-                {
-                    var contains = request.FilterItems["Name"];
-                    query = query.Where(ms => ms.Software.Name.Contains(contains));
-                }
-
-                if (request.FilterItems.ContainsKey("Version") && !string.IsNullOrEmpty(request.FilterItems["Version"]))
-                {
-                    var contains = request.FilterItems["Version"];
-                    query = query.Where(ms => ms.Software.Version.Contains(contains));
-                }
-
-                if (request.FilterItems.ContainsKey("LicenseName") &&
-                    !string.IsNullOrEmpty(request.FilterItems["LicenseName"]))
-                {
-                    var contains = request.FilterItems["LicenseName"];
-                    query =
-                        query.Where(
-                            ms => ms.License != null && ms.License.Name.Contains(contains));
-                }
-
-                var totalRecords = query.Count();
-                query = query
-                    .Include(ms => ms.Software)
-                    .Include(ms => ms.Software.Publisher)
-                    .Include(ms => ms.License)
-                    .Include(ms => ms.MachineSoftware);
-
-                var keySelector = GetByMachineIdOrderingSelecetor(request.Ordering.Sort);
-
-                if (string.IsNullOrEmpty(request.Ordering.Order) || request.Ordering.Order.ToLower() != "desc")
-                {
-                    query =
-                        query.OrderBy(keySelector)
-                            .Skip(request.Paging.PageIndex * request.Paging.PageSize)
-                            .Take(request.Paging.PageSize);
-                }
-                else
-                {
-                    query =
-                        query.OrderByDescending(keySelector)
-                            .Skip(request.Paging.PageIndex * request.Paging.PageSize)
-                            .Take(request.Paging.PageSize);
-                }
-
-                var items = query.ToArray().Select(s =>
-                {
-                    var soft =
-                        MapperFromModelToView.MapToSoftwareModel
-                            <InstalledSoftwareModel>(
-                                s.Software);
-                    soft.HasLicense = s.LicenseId.HasValue;
-                    soft.LicenseName = s.License != null ? s.License.Name : string.Empty;
-                    soft.LicenseId = s.License?.UniqueId;
-                    soft.InstallDate = s.MachineSoftware.InstallDate;
-                    soft.DiscoveryDate = s.MachineSoftware.CreatedOn;
-                    return soft;
-                });
-
-                response.Model.Items = items;
-                response.Model.TotalRecords = totalRecords;
-                response.Model.StructureUnitId = machine.CurrentLinkedStructureUnit.UniqueId;
-
-                response.Status = GetSoftwaresByMachineIdStatus.Success;
+                response.Status = GetSoftwaresByMachineIdStatus.MachineNotFound;
                 return response;
             }
+
+            if (machine.IsDisabled)
+            {
+                response.Status = GetSoftwaresByMachineIdStatus.MachineIsDisabled;
+                return response;
+            }
+
+            response.Model.MachineName = machine.Name;
+            response.Model.UserId = machine.CurrentUserId;
+
+            Expression<Func<MachineSoftwareLicenseReadOnly, bool>> filter = ms => true;
+            Expression<Func<MachineSoftwareLicenseReadOnly, bool>> filterLicensed = ms => ms.IsActive;
+            Expression<Func<MachineSoftwareLicenseReadOnly, bool>> filterUnlicensed = ms => !ms.LicenseId.HasValue;
+            Expression<Func<MachineSoftwareLicenseReadOnly, bool>> filterExpiredLicensed =
+                ms => ms.LicenseId.HasValue && !ms.IsActive;
+
+            var expressions = new List<Expression<Func<MachineSoftwareLicenseReadOnly, bool>>>();
+
+            if (licenseFilterType.HasFlag(LicenseFilterType.Licensed))
+            {
+                expressions.Add(filterLicensed);
+            }
+
+            if (licenseFilterType.HasFlag(LicenseFilterType.Unlicensed))
+            {
+                expressions.Add(filterUnlicensed);
+            }
+
+            if (licenseFilterType.HasFlag(LicenseFilterType.ExpiredLicensed))
+            {
+                expressions.Add(filterExpiredLicensed);
+            }
+
+            if (expressions.Count > 0)
+            {
+                filter = ExpressionExtension.BuildOr(expressions);
+            }
+
+            var query = unitOfWork.MachineSoftwareLicenseReadOnlyRepository.GetAll()
+                .Where(s => s.MachineId == machine.Id)
+                .Where(filter);
+
+            if (request.FilterItems.ContainsKey("Name") && !string.IsNullOrEmpty(request.FilterItems["Name"]))
+            {
+                var contains = request.FilterItems["Name"];
+                query = query.Where(ms => ms.Software.Name.Contains(contains));
+            }
+
+            if (request.FilterItems.ContainsKey("PublisherName") &&
+                !string.IsNullOrEmpty(request.FilterItems["PublisherName"]))
+            {
+                var contains = request.FilterItems["PublisherName"];
+                query =
+                    query.Where(
+                        ms =>
+                            (ms.Software.Publisher != null && ms.Software.Publisher.Name.Contains(contains)));
+            }
+
+            if (request.FilterItems.ContainsKey("Name") && !string.IsNullOrEmpty(request.FilterItems["Name"]))
+            {
+                var contains = request.FilterItems["Name"];
+                query = query.Where(ms => ms.Software.Name.Contains(contains));
+            }
+
+            if (request.FilterItems.ContainsKey("Version") && !string.IsNullOrEmpty(request.FilterItems["Version"]))
+            {
+                var contains = request.FilterItems["Version"];
+                query = query.Where(ms => ms.Software.Version.Contains(contains));
+            }
+
+            if (request.FilterItems.ContainsKey("LicenseName") &&
+                !string.IsNullOrEmpty(request.FilterItems["LicenseName"]))
+            {
+                var contains = request.FilterItems["LicenseName"];
+                query =
+                    query.Where(
+                        ms => ms.License != null && ms.License.Name.Contains(contains));
+            }
+
+            var totalRecords = query.Count();
+            query = query
+                .Include(ms => ms.Software)
+                .Include(ms => ms.Software.Publisher)
+                .Include(ms => ms.License)
+                .Include(ms => ms.MachineSoftware);
+
+            var keySelector = GetByMachineIdOrderingSelecetor(request.Ordering.Sort);
+
+            if (string.IsNullOrEmpty(request.Ordering.Order) || request.Ordering.Order.ToLower() != "desc")
+            {
+                query =
+                    query.OrderBy(keySelector)
+                        .Skip(request.Paging.PageIndex * request.Paging.PageSize)
+                        .Take(request.Paging.PageSize);
+            }
+            else
+            {
+                query =
+                    query.OrderByDescending(keySelector)
+                        .Skip(request.Paging.PageIndex * request.Paging.PageSize)
+                        .Take(request.Paging.PageSize);
+            }
+
+            var items = query.ToArray().Select(s =>
+            {
+                var soft =
+                    MapperFromModelToView.MapToSoftwareModel
+                        <InstalledSoftwareModel>(
+                            s.Software);
+                soft.HasLicense = s.LicenseId.HasValue;
+                soft.LicenseName = s.License != null ? s.License.Name : string.Empty;
+                soft.LicenseId = s.License?.UniqueId;
+                soft.InstallDate = s.MachineSoftware.InstallDate;
+                soft.DiscoveryDate = s.MachineSoftware.CreatedOn;
+                return soft;
+            });
+
+            response.Model.Items = items;
+            response.Model.TotalRecords = totalRecords;
+            response.Model.StructureUnitId = machine.CurrentLinkedStructureUnit.UniqueId;
+
+            response.Status = GetSoftwaresByMachineIdStatus.Success;
+            return response;
         }
 
         public IEnumerable<LicenseFilterTypeModel> GetSoftwareTypes()

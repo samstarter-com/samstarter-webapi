@@ -20,23 +20,23 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public CompanyAddResponse Add(StructureUnitModel model)
         {
-            var company = new StructureUnit();
-            company.Name = model.Name;
-            company.ShortName = model.Name;
-            company.UnitType = UnitType.Company;
+            var company = new StructureUnit
+            {
+                Name = model.Name,
+                ShortName = model.Name,
+                UnitType = UnitType.Company
+            };
 
             var dbContext = dbFactory.Create();
 
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
+            if (!IsCompanyExists(unitOfWork, company.Name))
             {
-                if (!IsCompanyExists(unitOfWork, company.Name))
-                {
-                    unitOfWork.StructureUnitRepository.Add(company);
-                    unitOfWork.Save();                  
-                    return new CompanyAddResponse() { CompanyUniqueId = company.UniqueId, CompanyId = company.Id, Status = CompanyCreationStatus.Success };                 
-                }               
-                return new CompanyAddResponse() { Status = CompanyCreationStatus.NonUnique };
+                unitOfWork.StructureUnitRepository.Add(company);
+                unitOfWork.Save();
+                return new CompanyAddResponse() { CompanyUniqueId = company.UniqueId, CompanyId = company.Id, Status = CompanyCreationStatus.Success };
             }
+            return new CompanyAddResponse() { Status = CompanyCreationStatus.NonUnique };
         }
 
         private bool IsCompanyExists(IUnitOfWork unitOfWork, string name)
@@ -48,10 +48,8 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         {
             var dbContext = dbFactory.Create();
 
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
-            {
-                return IsCompanyExists(unitOfWork, name);
-            }
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
+            return IsCompanyExists(unitOfWork, name);
         }
     }
 }

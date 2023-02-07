@@ -23,17 +23,17 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         public async Task<bool> SaveAsync(UploadedDocumentModel doc)
         {
             var dbContext = dbFactory.Create();
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
+            var entity = new UploadedDocument
             {
-                var entity = new UploadedDocument();
-                entity.Id = doc.UploadId;
-                entity.Name = doc.Name;
-                entity.Content = doc.Content;
+                Id = doc.UploadId,
+                Name = doc.Name,
+                Content = doc.Content
+            };
 
-                unitOfWork.UploadedDocumentRepository.Add(entity);
-                var result = await unitOfWork.SaveAsync();
-                return result == 1;
-            }
+            unitOfWork.UploadedDocumentRepository.Add(entity);
+            var result = await unitOfWork.SaveAsync();
+            return result == 1;
         }
     }
 }

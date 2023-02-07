@@ -9,19 +9,12 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices.Mappers
     {
         public static string GetErrorMessage(LicenseLinkToStructureUnitStatus status)
         {
-            string result;
-            switch (status)
+            string result = status switch
             {
-                case LicenseLinkToStructureUnitStatus.NotExist:
-                    result = "Cannot link. License not exist";
-                    break;
-                case LicenseLinkToStructureUnitStatus.StructureUnitNotExist:
-                    result = "Cannot link. Structure unit not exist";
-                    break;
-                default:
-                    result = "Unknown error";
-                    break;
-            }
+                LicenseLinkToStructureUnitStatus.NotExist => "Cannot link. License not exist",
+                LicenseLinkToStructureUnitStatus.StructureUnitNotExist => "Cannot link. Structure unit not exist",
+                _ => "Unknown error",
+            };
             return result;
         }
     }

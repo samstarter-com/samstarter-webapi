@@ -22,7 +22,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
     [ApiController]
     [Authorize(Policy = Constants.PolicyManager)]
     [Route("api/management/machines")]
-    public class MachineController : ControllerBase
+    public class MachineController : AuthorizedBaseController
     {
         private readonly ILogger<MachineController> log;
         private readonly IMachineService machineService;
@@ -173,10 +173,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
         [HttpPost]
         [Route("{machineId}/user/{userId}")]
         public async Task<IActionResult> ChangeUser(Guid machineId, Guid? userId)
-        {
-            var claimsIdentity = (ClaimsIdentity)this.User.Identity;
-            var authenticatedUserId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
-
+        {          
             if (!userId.HasValue)
             {
                 return this.Ok(new { success = false, errors = new[] { "Choose user" } });
@@ -191,7 +188,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
                     this.log.LogWarning("LinkToUserPost. Result is null. machineId:{0} userId:{1} userId:{2}",
                         machineId,
                         userId,
-                        authenticatedUserId);
+                        UserId);
                     throw new ArgumentOutOfRangeException();
             }
         }
@@ -293,10 +290,8 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
         [Route("{machineId}/licenses")]
         public async Task<IActionResult> MachineLicenses(Guid machineId, [FromQuery] PagingModel paging, [FromQuery] OrderingModel ordering,
             int status)
-        {
-            var claimsIdentity = (ClaimsIdentity)this.User.Identity;
-            var authenticatedUserId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
-            var suGuids = this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(authenticatedUserId), new[] { "Manager" });
+        {          
+            var suGuids = this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(UserId), new[] { "Manager" });
 
             var request = new GetAvailableLicensesByMachineIdRequest();
             request.SuIds = suGuids;

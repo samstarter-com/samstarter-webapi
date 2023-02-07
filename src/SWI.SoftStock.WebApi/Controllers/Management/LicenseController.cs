@@ -26,7 +26,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
     [ApiController]
     [Authorize(Policy = Constants.PolicyManager)]
     [Route("api/management/licenses")]
-    public class LicenseController : ControllerBase
+    public class LicenseController : AuthorizedBaseController
     {
         private readonly ILogger<LicenseController> log;
         private readonly ILicenseService licenseService;
@@ -229,11 +229,13 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
             [FromQuery] int? includeSubItems = 0)
         {
             req.LicenseId = licenseId;
-            var request = new GetLicenseUsageListRequest(req);
-            request.IncludeItemsOfSubUnits = includeSubItems == 1;
-            request.Paging = MapperFromViewToModel.MapToPaging(paging);
-            request.Ordering = MapperFromViewToModel.MapToOrdering(ordering);
-            request.LicenseId = licenseId;
+            var request = new GetLicenseUsageListRequest(req)
+            {
+                IncludeItemsOfSubUnits = includeSubItems == 1,
+                Paging = MapperFromViewToModel.MapToPaging(paging),
+                Ordering = MapperFromViewToModel.MapToOrdering(ordering),
+                LicenseId = licenseId
+            };
             var response = this.licenseService.GetLicenseUsageList(request);
 
             if (!req.ViewType.HasValue || req.ViewType.Value == 2)
@@ -272,11 +274,8 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
             [FromQuery] OrderingModel ordering,
             int status)
         {
-            var claimsIdentity = (ClaimsIdentity)this.User.Identity;
-            var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
-
-
-            var suGuids = this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(userId), new[] { "Manager" });
+           
+            var suGuids = this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(UserId), new[] { "Manager" });
 
             var request = new GetLicensedMachineRequest();
             request.Paging = MapperFromViewToModel.MapToPaging(paging);
@@ -373,11 +372,6 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
             }
 
             return 10000;
-        }
-
-        private IEnumerable<string> GetErrorsFromModelState()
-        {
-            return this.ModelState.SelectMany(x => x.Value.Errors.Select(error => error.ErrorMessage));
         }
     }
 }

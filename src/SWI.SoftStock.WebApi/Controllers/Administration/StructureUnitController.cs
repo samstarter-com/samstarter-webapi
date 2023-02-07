@@ -20,7 +20,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Administrations
     [ApiController]
     [Authorize(Policy = Constants.PolicyAdministrator)]
     [Route("api/administration/structureunits")]
-    public class AdminStructureUnitController : ControllerBase
+    public class AdminStructureUnitController : AuthorizedBaseController
     {
         private readonly IStructureUnitService structureUnitService;
 
@@ -44,12 +44,9 @@ namespace SWI.SoftStock.WebApi.Controllers.Administrations
         {
             const string role = "Admin";
 
-            var parsed = Guid.TryParse(request?.SelectedStructureUnitId, out var uniqueId);
+            var parsed = Guid.TryParse(request?.SelectedStructureUnitId, out var uniqueId);           
 
-            var claimsIdentity = (ClaimsIdentity)this.User.Identity;
-            var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
-
-            var tree = this.structureUnitService.GetStructureUnitModels(Guid.Parse(userId),
+            var tree = this.structureUnitService.GetStructureUnitModels(Guid.Parse(UserId),
                 parsed
                     ? (Guid?)
                         uniqueId
@@ -63,10 +60,8 @@ namespace SWI.SoftStock.WebApi.Controllers.Administrations
         [HttpGet]
         [Route("{id}")]
         public IActionResult GetDetails(string id)
-        {
-            var claimsIdentity = (ClaimsIdentity)this.User.Identity;
-            var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
-            var userGuid = Guid.Parse(userId);
+        {          
+            var userGuid = Guid.Parse(UserId);
             if (!Guid.TryParse(id, out var uniqueId))
             {
                 uniqueId = this.structureUnitService.GetStructureUnitModels(userGuid,
@@ -94,9 +89,6 @@ namespace SWI.SoftStock.WebApi.Controllers.Administrations
         {
             if (this.ModelState.IsValid)
             {
-                var claimsIdentity = (ClaimsIdentity)this.User.Identity;
-                var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
-
                 var uniqueId = this.structureUnitService.CreateAndAdd(model, model.ParentUniqueId.Value, out var status);
 
                 switch (status)
@@ -107,7 +99,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Administrations
                     case StructureUnitCreationStatus.ParentNotFound:
                         this.log.LogError("Cannot add. Parent is null. model:{0} userId:{1} parentId:{2}",
                             model,
-                            userId,
+                            UserId,
                             model.ParentUniqueId.Value);
                         return this.StatusCode(StatusCodes.Status500InternalServerError,
                             new FailedResponse() { Errors = new[] { "Cannot add" } });
@@ -117,7 +109,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Administrations
                         IEnumerable<string> errorsFromModelState = new string[] { }; // = GetErrorsFromModelState();
                         this.log.LogWarning("Cannot add. model:{0} userId:{1} parentId:{2} Errors:{3}",
                             model,
-                            userId,
+                            UserId,
                             model.ParentUniqueId.Value,
                             errorsFromModelState.ToArray());
                         return this.StatusCode(StatusCodes.Status500InternalServerError,
@@ -126,7 +118,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Administrations
 
                 this.log.LogWarning("Result is null. model:{0} userId:{1} parentId:{2}",
                     model,
-                    userId,
+                    UserId,
                     model.ParentUniqueId.Value);
 
                 return this.StatusCode(StatusCodes.Status500InternalServerError);
@@ -142,9 +134,6 @@ namespace SWI.SoftStock.WebApi.Controllers.Administrations
         {
             if (this.ModelState.IsValid)
             {
-
-                var claimsIdentity = (ClaimsIdentity)this.User.Identity;
-                var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
                 StructureUnitUpdateStatus status = await this.structureUnitService.Update(model);
                 switch (status)
                 {
@@ -161,12 +150,12 @@ namespace SWI.SoftStock.WebApi.Controllers.Administrations
                         IEnumerable<string> errorsFromModelState = new string[] { };
                         this.log.LogWarning("Cannot update. model:{0} parentId:{1} Errors:{2}",
                                     model,
-                                    userId, errorsFromModelState);
+                                    UserId, errorsFromModelState);
                         return this.StatusCode(StatusCodes.Status500InternalServerError, new FailedResponse() { Errors = errorsFromModelState.ToArray() });
 
                 }
 
-                this.log.LogWarning("Result is null. model:{0} userId:{1}", model, userId);
+                this.log.LogWarning("Result is null. model:{0} userId:{1}", model, UserId);
                 return this.StatusCode(StatusCodes.Status500InternalServerError);
             }
             return this.StatusCode(StatusCodes.Status500InternalServerError, this.ModelState);
@@ -176,15 +165,12 @@ namespace SWI.SoftStock.WebApi.Controllers.Administrations
         [Route("{id}")]
         public IActionResult Delete(Guid id)
         {
-            var claimsIdentity = (ClaimsIdentity)this.User.Identity;
-            var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
-
             Guid? parentUniqueId = this.structureUnitService.GetParentUniqueId(id);
             StructureUnitDeleteStatus statuses = this.structureUnitService.DeleteByUniqueId(id);
             if (statuses > (int)StructureUnitDeleteStatus.None)
             {
                 var errors = new List<string>();
-                this.log.LogWarning("Cannot delete. id:{0} userId:{1}", id, userId);
+                this.log.LogWarning("Cannot delete. id:{0} userId:{1}", id, UserId);
                 foreach (var status in ((StructureUnitDeleteStatus[])Enum.GetValues(typeof(StructureUnitDeleteStatus))).Where(s => s != StructureUnitDeleteStatus.None))
                 {
                     if (statuses.HasFlag(status))

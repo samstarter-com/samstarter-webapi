@@ -22,7 +22,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
     [ApiController]
     [Authorize(Policy = Constants.PolicyManager)]
     [Route("api/management/softwares")]
-    public class SoftwareController : ControllerBase
+    public class SoftwareController : AuthorizedBaseController
     {
         private readonly ILogger<SoftwareController> log;
         private readonly ISoftwareService softwareService;
@@ -48,10 +48,8 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
         [HttpGet]
         [Route("{softwareId}")]
         public async Task<IActionResult> GetById(Guid softwareId, string cid = null, int includeSubItems = 0)
-        {
-            var claimsIdentity = (ClaimsIdentity)this.User.Identity;
-            var authenticatedUserId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
-            var userId = Guid.Parse(authenticatedUserId);
+        {            
+            var userId = Guid.Parse(UserId);
 
             var cidParsed = Guid.TryParse(cid, out var uniqueId);
             var companyId = this.userService.GetCompanyId(userId);
@@ -77,13 +75,11 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
         [HttpGet]
         [Route("autocomplete")]
         public IActionResult SoftwaresAutocomplete([FromQuery] string request, [FromQuery] string cid = null)
-        {
-            var claimsIdentity = (ClaimsIdentity)this.User.Identity;
-            var authenticatedUserId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
+        {           
             var isGuid = Guid.TryParse(cid, out var cidGuid);
             if (!isGuid)
             {
-                cidGuid = this.userService.GetCompanyId(Guid.Parse(authenticatedUserId));
+                cidGuid = this.userService.GetCompanyId(Guid.Parse(UserId));
             }
             var model = this.softwareService.GetForAutocomplete(cidGuid, request, true);
             return this.Ok(new { softwares = model.Items, totalRecords = model.TotalRecords, structureUnitId = cid });
@@ -206,10 +202,8 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
         [Route("machines")]
         public async Task<IActionResult> SoftwaresMachinesAsync([FromQuery] Guid softwareId, [FromQuery] PagingModel paging,
             [FromQuery] OrderingModel ordering, [FromQuery] int filterType)
-        {
-            var claimsIdentity = (ClaimsIdentity)this.User.Identity;
-            var authenticatedUserId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
-            var userId = Guid.Parse(authenticatedUserId);
+        {          
+            var userId = Guid.Parse(UserId);
 
             var suGuids = this.structureUnitService.GetStructureUnitsGuid(userId, new[] { "Manager" });
 

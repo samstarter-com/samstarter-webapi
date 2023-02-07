@@ -17,7 +17,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Personal
     [ApiController]
     [Authorize(Policy = Constants.PolicyUser)]
     [Route("api/personal/licenserequests")]
-    public class PersonalLicenseRequestController : ControllerBase
+    public class PersonalLicenseRequestController : AuthorizedBaseController
     {
         private readonly IPersonalLicenseRequestService personalLicenseRequestService;
 
@@ -32,15 +32,13 @@ namespace SWI.SoftStock.WebApi.Controllers.Personal
         [HttpGet]
         [Route("")]
         public async Task<IActionResult> LicenseRequests([FromQuery] PagingModel paging, [FromQuery] OrderingModel ordering, int status)
-        {
-            var claimsIdentity = (ClaimsIdentity)this.User.Identity;
-            var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
+        {           
 
             var statusFilter = (PersonalLicenseRequestStatus)status;
 
             var request = new SWI.SoftStock.ServerApps.WebApplicationContracts.PersonalLicenseRequestService.GetByUserId.GetByUserIdRequest
             {
-                UserId = Guid.Parse(userId),
+                UserId = Guid.Parse(UserId),
                 Status = statusFilter,
                 Paging = MapperFromViewToModel.MapToPaging(paging),
                 Ordering = MapperFromViewToModel.MapToOrdering(ordering)
@@ -67,11 +65,8 @@ namespace SWI.SoftStock.WebApi.Controllers.Personal
         [Route("newcount")]
         public async Task<IActionResult> NewLicenseRequestCountAsync()
         {
-            var claimsIdentity = (ClaimsIdentity)this.User.Identity;
-            var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
-
             var request = new GetNewLicenseRequestCountRequest();
-            request.UserId = Guid.Parse(userId);
+            request.UserId = Guid.Parse(UserId);
             var result = await this.personalLicenseRequestService.GetNewLicenseRequestCount(request);
             return this.Ok(result.Count);
         }

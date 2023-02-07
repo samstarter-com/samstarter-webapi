@@ -85,28 +85,15 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         private string GetTickText(BarChartRangeType barChartRange, DateTime @from, DateTime to)
         {
-            string result;
-            switch (barChartRange)
+            string result = barChartRange switch
             {
-                case BarChartRangeType.Day:
-                    result = from.ToShortDateString();
-                    break;
-                case BarChartRangeType.Week:
-                    result = string.Format("{0}-{1}", from.ToShortDateString(), to.ToShortDateString());
-                    break;
-                case BarChartRangeType.Month:
-                    result = string.Format("M{0} Y{1}", from.Month, from.Year);
-                    break;
-                case BarChartRangeType.Quarter:
-                    result = string.Format("Q{0} Y{1}", (from.Month - 1) / 3 + 1, from.Year);
-                    break;
-                case BarChartRangeType.Year:
-                    result = from.Year.ToString();
-                    break;
-                default:
-                    result = string.Empty;
-                    break;
-            }
+                BarChartRangeType.Day => from.ToShortDateString(),
+                BarChartRangeType.Week => string.Format("{0}-{1}", from.ToShortDateString(), to.ToShortDateString()),
+                BarChartRangeType.Month => string.Format("M{0} Y{1}", from.Month, from.Year),
+                BarChartRangeType.Quarter => string.Format("Q{0} Y{1}", (from.Month - 1) / 3 + 1, from.Year),
+                BarChartRangeType.Year => from.Year.ToString(),
+                _ => string.Empty,
+            };
             return result;
         }
 
@@ -272,81 +259,75 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         {
             GetStructureUnitIdResponse response = new GetStructureUnitIdResponse();
             var dbContext = dbFactory.Create();
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
+            License license =
+                unitOfWork.LicenseRepository.GetAll().SingleOrDefault(m => m.UniqueId == request.LicenseId);
+            if (license == null)
             {
-                License license =
-                    unitOfWork.LicenseRepository.GetAll().SingleOrDefault(m => m.UniqueId == request.LicenseId);
-                if (license == null)
-                {
-                    response.Status = GetStructureUnitIdStatus.LicenseNotFound;
-                    return response;
-                }
-                response.StructureUnitId = license.StructureUnit.UniqueId;
-                response.Status = GetStructureUnitIdStatus.Success;
+                response.Status = GetStructureUnitIdStatus.LicenseNotFound;
                 return response;
             }
+            response.StructureUnitId = license.StructureUnit.UniqueId;
+            response.Status = GetStructureUnitIdStatus.Success;
+            return response;
         }
 
         public LicenseModelEx GetLicenseModelExById(Guid id)
         {
             var dbContext = dbFactory.Create();
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
-            {
-                var license = unitOfWork.LicenseRepository.GetAll().Single(l => l.UniqueId == id);
-                return license != null ? MapperFromModelToView.MapToLicenseModelEx(license) : null;
-            }
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
+            var license = unitOfWork.LicenseRepository.GetAll().Single(l => l.UniqueId == id);
+            return license != null ? MapperFromModelToView.MapToLicenseModelEx(license) : null;
         }
 
         public LicenseModel GetLicenseModelById(Guid id)
         {
             var dbContext = dbFactory.Create();
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
-            {
-                var license = unitOfWork.LicenseRepository.GetAll().Single(l => l.UniqueId == id);
-                return license != null ? MapperFromModelToView.MapToLicenseModel<LicenseModel>(license) : null;
-            }
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
+            var license = unitOfWork.LicenseRepository.GetAll().Single(l => l.UniqueId == id);
+            return license != null ? MapperFromModelToView.MapToLicenseModel<LicenseModel>(license) : null;
         }
 
         public async Task<GetByStructureUnitIdResponse> GetByStructureUnitIdAsync(GetByStructureUnitIdRequest request)
         {
-            var response = new GetByStructureUnitIdResponse();
-            response.Model = new LicenseCollection(request.Ordering.Order, request.Ordering.Sort);
-            var dbContext = dbFactory.Create();
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
+            var response = new GetByStructureUnitIdResponse
             {
-                var structureUnit =
-                    unitOfWork.StructureUnitRepository.GetAll().Single(s => s.UniqueId == request.StructureUnitId);
-                IQueryable<License> query;
-                if (!request.IncludeItemsOfSubUnits)
-                {
-                    query = unitOfWork.LicenseRepository.Query(m => m.StructureUnitId == structureUnit.Id);
-                }
-                else
-                {
-                    var structureUnitIds =
-                        structureUnit.Descendants(sud => sud.ChildStructureUnits).Select(su => su.Id);
-                    query = unitOfWork.LicenseRepository.GetAll()
-                        .Where(l => structureUnitIds.Contains(l.StructureUnitId));
-                }
-
-                var totalRecords = await query.CountAsync();
-
-                var keySelector = GetByStructureUnitIdOrderingSelecetor(request.Ordering.Sort);
-
-                var licenses =
-                    (string.IsNullOrEmpty(request.Ordering.Order) || request.Ordering.Order.ToLower() != "desc")
-                        ? query.OrderBy(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize)
-                            .Take(request.Paging.PageSize)
-                        : query.OrderByDescending(keySelector)
-                            .Skip(request.Paging.PageIndex * request.Paging.PageSize)
-                            .Take(request.Paging.PageSize);
-
-            
-                response.Model.Items = licenses.Select(MapperFromModelToView.MapToLicenseModel<LicenseModel>).ToArray();
-                response.Model.TotalRecords = totalRecords;
-                response.Status = GetByStructureUnitIdStatus.Success;
-                return response;
+                Model = new LicenseCollection(request.Ordering.Order, request.Ordering.Sort)
+            };
+            var dbContext = dbFactory.Create();
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
+            var structureUnit =
+                unitOfWork.StructureUnitRepository.GetAll().Single(s => s.UniqueId == request.StructureUnitId);
+            IQueryable<License> query;
+            if (!request.IncludeItemsOfSubUnits)
+            {
+                query = unitOfWork.LicenseRepository.Query(m => m.StructureUnitId == structureUnit.Id);
             }
+            else
+            {
+                var structureUnitIds =
+                    structureUnit.Descendants(sud => sud.ChildStructureUnits).Select(su => su.Id);
+                query = unitOfWork.LicenseRepository.GetAll()
+                    .Where(l => structureUnitIds.Contains(l.StructureUnitId));
+            }
+
+            var totalRecords = await query.CountAsync();
+
+            var keySelector = GetByStructureUnitIdOrderingSelecetor(request.Ordering.Sort);
+
+            var licenses =
+                (string.IsNullOrEmpty(request.Ordering.Order) || request.Ordering.Order.ToLower() != "desc")
+                    ? query.OrderBy(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize)
+                        .Take(request.Paging.PageSize)
+                    : query.OrderByDescending(keySelector)
+                        .Skip(request.Paging.PageIndex * request.Paging.PageSize)
+                        .Take(request.Paging.PageSize);
+
+
+            response.Model.Items = licenses.Select(MapperFromModelToView.MapToLicenseModel<LicenseModel>).ToArray();
+            response.Model.TotalRecords = totalRecords;
+            response.Status = GetByStructureUnitIdStatus.Success;
+            return response;
         }
 
         public GetLicenseUsageListResponse GetLicenseUsageList(GetLicenseUsageListRequest request)
@@ -357,12 +338,15 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             //}
             request = FillLicenseUsageRequest(request);
 
-            var response = new GetLicenseUsageListResponse();
-            response.Model = new LicenseMachineUsageItemCollection(request.Ordering.Order, request.Ordering.Sort);
-
-            response.Model.From = request.FromDate ?? DateTime.Now.AddDays(-3);
-            response.Model.To = request.ToDate ?? DateTime.Now;
-            response.Model.Range = request.Range.Value;
+            var response = new GetLicenseUsageListResponse
+            {
+                Model = new LicenseMachineUsageItemCollection(request.Ordering.Order, request.Ordering.Sort)
+                {
+                    From = request.FromDate ?? DateTime.Now.AddDays(-3),
+                    To = request.ToDate ?? DateTime.Now,
+                    Range = request.Range.Value
+                }
+            };
             var barChartRange = (BarChartRangeType)(request.Range.Value);
             var tickCount = TickCount(response.Model.To, response.Model.From, barChartRange);
             var items = new List<LicenseUsageMachineModel>();
@@ -452,11 +436,9 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         public IEnumerable<DropDownItemModel> GetLicenseTypes()
         {
             var dbContext = dbFactory.Create();
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
-            {
-                var licenseTypes = unitOfWork.LicenseTypeRepository.GetAll().OrderBy(l => l.Id).ToArray();
-                return licenseTypes.Select(MapperFromModelToView.MapToLicenseTypeModel);
-            }
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
+            var licenseTypes = unitOfWork.LicenseTypeRepository.GetAll().OrderBy(l => l.Id).ToArray();
+            return licenseTypes.Select(MapperFromModelToView.MapToLicenseTypeModel);
         }
 
         public GetLicenseUsageResponse GetLicenseUsage(GetLicenseUsageRequest request)
@@ -466,8 +448,10 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             //	request.ViewType = (int) UsageViewType.Chart;
             //}
 
-            var response = new GetLicenseUsageResponse();
-            response.Model = new LicenseUsageItemCollection();
+            var response = new GetLicenseUsageResponse
+            {
+                Model = new LicenseUsageItemCollection()
+            };
             request = FillLicenseUsageRequest(request);
             response.Model.From = request.FromDate.Value;
             response.Model.To = request.ToDate.Value;
@@ -572,219 +556,213 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         public DocumentModelEx GetDocumentById(Guid id)
         {
             var dbContext = dbFactory.Create();
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
-            {
-                var doc = unitOfWork.DocumentRepository.GetAll().Single(d => d.UniqueId == id);
-                return MapperFromModelToView.MapToDocumentModelEx(doc, true);
-            }
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
+            var doc = unitOfWork.DocumentRepository.GetAll().Single(d => d.UniqueId == id);
+            return MapperFromModelToView.MapToDocumentModelEx(doc, true);
         }
 
         public async Task<LicenseUpdateStatus> UpdateAsync(LicenseModelEx model)
         {
             var now = DateTime.Now;
             var dbContext = dbFactory.Create();
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
+            var license =
+                unitOfWork.LicenseRepository.GetAll().SingleOrDefault(l => l.UniqueId == model.LicenseId);
+            var changed = false;
+            if (license == null)
             {
-                var license =
-                    unitOfWork.LicenseRepository.GetAll().SingleOrDefault(l => l.UniqueId == model.LicenseId);
-                var changed = false;
-                if (license == null)
-                {
-                    return LicenseUpdateStatus.NotExist;
-                }
-                //todo when reducing the number of licenses, check that the number of already installed licenses is not exceeded
-                if (!model.Equals(license))
-                {
-                    license.Name = model.Name.Trim();
-                    license.LicenseTypeId = model.LicenseTypeId.Value;
-                    license.BeginDate = model.BeginDate;
-                    license.ExpirationDate = model.ExpirationDate;
-                    license.Count = model.Count;
-                    license.Comments = model.Comments != null ? model.Comments.Trim() : string.Empty;
-                    unitOfWork.LicenseRepository.Update(license, license.Id);
-                    changed = true;
-                }
-                var addedSoftwareUniqueIds =
-                    model.LinkedSoftwares.Where(
-                        current =>
-                            !license.LicenseSoftwares.Any(stored => current.SoftwareId == stored.Software.UniqueId)).Select(
-                                sm => sm.SoftwareId).ToArray();
-                var removedSoftwareModels =
-                    license.LicenseSoftwares.Where(
-                        stored => !model.LinkedSoftwares.Any(current => current.SoftwareId == stored.Software.UniqueId)).ToArray();
-                // todo check that the license is not tied to removedSoftwareModels. If it is linked, then do not change, but return the status of LinkedToRemovedSoftware
-
-                var addedSoftwares =
-                    unitOfWork.SoftwareRepository.GetAll().Where(s => addedSoftwareUniqueIds.Contains(s.UniqueId)).ToArray();
-
-                if (addedSoftwares.Any())
-                {
-                    unitOfWork.LicenseSoftwareRepository.AddRange(
-                        addedSoftwares.Select(a => new LicenseSoftware { LicenseId = license.Id, SoftwareId = a.Id }).
-                            ToArray());
-                    changed = true;
-                }
-                if (removedSoftwareModels.Any())
-                {
-                    if (license.BeginDate < now && license.ExpirationDate > now &&
-                        removedSoftwareModels.SelectMany(rsm => rsm.LicenseMachineSoftwares).Any(lms => !lms.IsDeleted))
-                    {
-                        return LicenseUpdateStatus.LinkedToRemovedSoftware;
-                    }
-                    foreach (var removedSoftwareModel in removedSoftwareModels)
-                    {
-                        unitOfWork.LicenseMachineSoftwareRepository.DeleteRange(removedSoftwareModel.LicenseMachineSoftwares.ToArray());
-                    }
-                    unitOfWork.LicenseSoftwareRepository.DeleteRange(removedSoftwareModels);
-                    changed = true;
-                }
-
-                var addedDocuments =
-                    model.Documents?.Where(current => license.Documents.All(stored => current.Id != stored.UniqueId)).ToArray();
-                var removedDocuments =
-                    license.Documents.Where(stored => model.Documents.All(current => current.Id != stored.UniqueId)).ToArray();
-                var changedDocuments = license.Documents.Except(removedDocuments)
-                    .Join(
-                        model.Documents?.Select(MapperFromViewToModel.MapToDocument) ?? Array.Empty<Document>(),
-                        o => o.UniqueId,
-                        i => i.UniqueId,
-                        (o, i) => new { Outer = o, Inner = i })
-                    .Where(j => j.Outer.HcLocation?.Trim() != j.Inner.HcLocation?.Trim())
-                    .Select(
-                        j =>
-                        {
-                            j.Outer.HcLocation = j.Inner.HcLocation;
-                            return j.Outer;
-                        });
-
-                if (addedDocuments?.Any() == true)
-                {
-                    var uploadedDocuments = await unitOfWork.UploadedDocumentRepository.GetAll()
-                        .Where(ud => addedDocuments.Select(ad => ad.UploadId).Contains(ud.Id)).ToArrayAsync();
-
-                    unitOfWork.DocumentRepository.AddRange(
-                        addedDocuments.Select(
-                            d =>
-                            {
-                                d.Content = uploadedDocuments.SingleOrDefault(ud => ud.Id == d.UploadId)?.Content;
-                                var docModel = MapperFromViewToModel.MapToDocument(d);
-                                docModel.LicenseId = license.Id;
-                                return docModel;
-                            }).ToArray());
-                    changed = true;
-                    unitOfWork.UploadedDocumentRepository.DeleteRange(uploadedDocuments);
-                }
-
-                if (removedDocuments.Any())
-                {
-                    unitOfWork.DocumentRepository.DeleteRange(removedDocuments);
-                    changed = true;
-                }
-
-                if (changedDocuments.Any())
-                {
-                    foreach (var changedDocument in changedDocuments)
-                    {
-                        unitOfWork.DocumentRepository.Update(changedDocument, changedDocument.Id);
-                    }
-
-                    changed = true;
-                }
-
-                var addedAlerts =
-                    model.Alerts?.Where(current => license.LicenseAlerts.All(stored => current.Id != stored.UniqueId)).ToArray();
-                var removedAlerts =
-                    license.LicenseAlerts.Where(stored => model.Alerts.All(current => current.Id != stored.UniqueId)).ToArray();
-                var changedAlerts = license.LicenseAlerts.Except(removedAlerts)
-                    .Join(model.Alerts?.Select(MapperFromViewToModel.MapToAlert) ?? Array.Empty<LicenseAlert>(),
-                        o => o.UniqueId,
-                        i => i.UniqueId,
-                        (o, i) => new { Outer = o, Inner = i })
-                    .Where(j => !j.Outer.Equals(j.Inner))
-                    .Select(j =>
-                    {
-                        var deletedAlertUsers = j.Outer.Assignees.Where(
-                            o => j.Inner.Assignees.All(i => i.UserUserId != o.UserUserId)).ToArray();
-                        unitOfWork.LicenseAlertUserRepository.DeleteRange(deletedAlertUsers);
-
-                        var addedAlertUsers = j.Inner.Assignees.
-                            Where(
-                                current => j.Outer.Assignees.All(stored => current.UserUserId != stored.UserUserId));
-                        foreach (var added in addedAlertUsers)
-                        {
-                            j.Outer.Assignees.Add(added);
-                        }
-
-                        j.Outer.AlertDate = j.Inner.AlertDate;
-
-                        j.Outer.Text = j.Inner.Text;
-                        return j.Outer;
-                    }).ToArray();
-
-                if (addedAlerts != null && addedAlerts.Any())
-                {
-                    unitOfWork.LicenseAlertRepository.AddRange(
-                        addedAlerts.Select(
-                            a =>
-                            {
-                                var alertModel = MapperFromViewToModel.MapToAlert(a);
-                                alertModel.LicenseId = license.Id;
-                                return alertModel;
-                            }).ToArray());
-                    changed = true;
-                }
-
-                if (removedAlerts.Any())
-                {
-                    unitOfWork.LicenseAlertRepository.DeleteRange(removedAlerts);
-                    changed = true;
-                }
-
-                if (changedAlerts.Any())
-                {
-                    foreach (var changedAlert in changedAlerts)
-                    {
-                        unitOfWork.LicenseAlertRepository.Update(changedAlert, changedAlert.Id);
-                    }
-
-                    changed = true;
-                }
-
-                if (changed)
-                {
-                    unitOfWork.Save();
-                }
-
-                return LicenseUpdateStatus.Success;
+                return LicenseUpdateStatus.NotExist;
             }
+            //todo when reducing the number of licenses, check that the number of already installed licenses is not exceeded
+            if (!model.Equals(license))
+            {
+                license.Name = model.Name.Trim();
+                license.LicenseTypeId = model.LicenseTypeId.Value;
+                license.BeginDate = model.BeginDate;
+                license.ExpirationDate = model.ExpirationDate;
+                license.Count = model.Count;
+                license.Comments = model.Comments != null ? model.Comments.Trim() : string.Empty;
+                unitOfWork.LicenseRepository.Update(license, license.Id);
+                changed = true;
+            }
+            var addedSoftwareUniqueIds =
+                model.LinkedSoftwares.Where(
+                    current =>
+                        !license.LicenseSoftwares.Any(stored => current.SoftwareId == stored.Software.UniqueId)).Select(
+                            sm => sm.SoftwareId).ToArray();
+            var removedSoftwareModels =
+                license.LicenseSoftwares.Where(
+                    stored => !model.LinkedSoftwares.Any(current => current.SoftwareId == stored.Software.UniqueId)).ToArray();
+            // todo check that the license is not tied to removedSoftwareModels. If it is linked, then do not change, but return the status of LinkedToRemovedSoftware
+
+            var addedSoftwares =
+                unitOfWork.SoftwareRepository.GetAll().Where(s => addedSoftwareUniqueIds.Contains(s.UniqueId)).ToArray();
+
+            if (addedSoftwares.Any())
+            {
+                unitOfWork.LicenseSoftwareRepository.AddRange(
+                    addedSoftwares.Select(a => new LicenseSoftware { LicenseId = license.Id, SoftwareId = a.Id }).
+                        ToArray());
+                changed = true;
+            }
+            if (removedSoftwareModels.Any())
+            {
+                if (license.BeginDate < now && license.ExpirationDate > now &&
+                    removedSoftwareModels.SelectMany(rsm => rsm.LicenseMachineSoftwares).Any(lms => !lms.IsDeleted))
+                {
+                    return LicenseUpdateStatus.LinkedToRemovedSoftware;
+                }
+                foreach (var removedSoftwareModel in removedSoftwareModels)
+                {
+                    unitOfWork.LicenseMachineSoftwareRepository.DeleteRange(removedSoftwareModel.LicenseMachineSoftwares.ToArray());
+                }
+                unitOfWork.LicenseSoftwareRepository.DeleteRange(removedSoftwareModels);
+                changed = true;
+            }
+
+            var addedDocuments =
+                model.Documents?.Where(current => license.Documents.All(stored => current.Id != stored.UniqueId)).ToArray();
+            var removedDocuments =
+                license.Documents.Where(stored => model.Documents.All(current => current.Id != stored.UniqueId)).ToArray();
+            var changedDocuments = license.Documents.Except(removedDocuments)
+                .Join(
+                    model.Documents?.Select(MapperFromViewToModel.MapToDocument) ?? Array.Empty<Document>(),
+                    o => o.UniqueId,
+                    i => i.UniqueId,
+                    (o, i) => new { Outer = o, Inner = i })
+                .Where(j => j.Outer.HcLocation?.Trim() != j.Inner.HcLocation?.Trim())
+                .Select(
+                    j =>
+                    {
+                        j.Outer.HcLocation = j.Inner.HcLocation;
+                        return j.Outer;
+                    });
+
+            if (addedDocuments?.Any() == true)
+            {
+                var uploadedDocuments = await unitOfWork.UploadedDocumentRepository.GetAll()
+                    .Where(ud => addedDocuments.Select(ad => ad.UploadId).Contains(ud.Id)).ToArrayAsync();
+
+                unitOfWork.DocumentRepository.AddRange(
+                    addedDocuments.Select(
+                        d =>
+                        {
+                            d.Content = uploadedDocuments.SingleOrDefault(ud => ud.Id == d.UploadId)?.Content;
+                            var docModel = MapperFromViewToModel.MapToDocument(d);
+                            docModel.LicenseId = license.Id;
+                            return docModel;
+                        }).ToArray());
+                changed = true;
+                unitOfWork.UploadedDocumentRepository.DeleteRange(uploadedDocuments);
+            }
+
+            if (removedDocuments.Any())
+            {
+                unitOfWork.DocumentRepository.DeleteRange(removedDocuments);
+                changed = true;
+            }
+
+            if (changedDocuments.Any())
+            {
+                foreach (var changedDocument in changedDocuments)
+                {
+                    unitOfWork.DocumentRepository.Update(changedDocument, changedDocument.Id);
+                }
+
+                changed = true;
+            }
+
+            var addedAlerts =
+                model.Alerts?.Where(current => license.LicenseAlerts.All(stored => current.Id != stored.UniqueId)).ToArray();
+            var removedAlerts =
+                license.LicenseAlerts.Where(stored => model.Alerts.All(current => current.Id != stored.UniqueId)).ToArray();
+            var changedAlerts = license.LicenseAlerts.Except(removedAlerts)
+                .Join(model.Alerts?.Select(MapperFromViewToModel.MapToAlert) ?? Array.Empty<LicenseAlert>(),
+                    o => o.UniqueId,
+                    i => i.UniqueId,
+                    (o, i) => new { Outer = o, Inner = i })
+                .Where(j => !j.Outer.Equals(j.Inner))
+                .Select(j =>
+                {
+                    var deletedAlertUsers = j.Outer.Assignees.Where(
+                        o => j.Inner.Assignees.All(i => i.UserUserId != o.UserUserId)).ToArray();
+                    unitOfWork.LicenseAlertUserRepository.DeleteRange(deletedAlertUsers);
+
+                    var addedAlertUsers = j.Inner.Assignees.
+                        Where(
+                            current => j.Outer.Assignees.All(stored => current.UserUserId != stored.UserUserId));
+                    foreach (var added in addedAlertUsers)
+                    {
+                        j.Outer.Assignees.Add(added);
+                    }
+
+                    j.Outer.AlertDate = j.Inner.AlertDate;
+
+                    j.Outer.Text = j.Inner.Text;
+                    return j.Outer;
+                }).ToArray();
+
+            if (addedAlerts != null && addedAlerts.Any())
+            {
+                unitOfWork.LicenseAlertRepository.AddRange(
+                    addedAlerts.Select(
+                        a =>
+                        {
+                            var alertModel = MapperFromViewToModel.MapToAlert(a);
+                            alertModel.LicenseId = license.Id;
+                            return alertModel;
+                        }).ToArray());
+                changed = true;
+            }
+
+            if (removedAlerts.Any())
+            {
+                unitOfWork.LicenseAlertRepository.DeleteRange(removedAlerts);
+                changed = true;
+            }
+
+            if (changedAlerts.Any())
+            {
+                foreach (var changedAlert in changedAlerts)
+                {
+                    unitOfWork.LicenseAlertRepository.Update(changedAlert, changedAlert.Id);
+                }
+
+                changed = true;
+            }
+
+            if (changed)
+            {
+                unitOfWork.Save();
+            }
+
+            return LicenseUpdateStatus.Success;
         }
 
         public LicenseDeleteStatus DeleteById(Guid licenseId)
         {
             var dbContext = dbFactory.Create();
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
+            var license =
+                unitOfWork.LicenseRepository.GetAll().Single(l => l.UniqueId == licenseId);
+
+            if (license.LicenseSoftwares.Any() && license.LicenseSoftwares.SelectMany(ls => ls.LicenseMachineSoftwares).Any())
             {
-                var license =
-                    unitOfWork.LicenseRepository.GetAll().Single(l => l.UniqueId == licenseId);
-
-                if (license.LicenseSoftwares.Any() && license.LicenseSoftwares.SelectMany(ls => ls.LicenseMachineSoftwares).Any())
-                {
-                    return LicenseDeleteStatus.LicenseAttachedToMachine;
-                }
-
-                try
-                {
-                    unitOfWork.LicenseRepository.Delete(license);
-                    unitOfWork.Save();
-                }
-                catch (Exception e)
-                {
-                    log.LogError(0, e, e.Message);
-                    return LicenseDeleteStatus.UnknownError;
-                }
-
-                return LicenseDeleteStatus.Success;
+                return LicenseDeleteStatus.LicenseAttachedToMachine;
             }
+
+            try
+            {
+                unitOfWork.LicenseRepository.Delete(license);
+                unitOfWork.Save();
+            }
+            catch (Exception e)
+            {
+                log.LogError(0, e, e.Message);
+                return LicenseDeleteStatus.UnknownError;
+            }
+
+            return LicenseDeleteStatus.Success;
         }
 
         public async Task<LicenseLinkToStructureUnitStatus> LinkToStructureUnitAsync(Guid licenseId, Guid structureUnitId)
@@ -823,36 +801,34 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             var now = DateTime.Now;
             response.Model = new ShortLicenseCollection(request.Ordering.Order, request.Ordering.Sort);
             var dbContext = dbFactory.Create();
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
+            var sus = unitOfWork.StructureUnitRepository.GetAll().Join(request.SuGuids, o => o.UniqueId, i => i, (o, i) => o);
+            var software = unitOfWork.SoftwareRepository.GetAll().Single(s => s.UniqueId == request.SoftwareId);
+            var query = unitOfWork.LicenseRepository.GetAll().Join(sus, o => o.StructureUnitId, i => i.Id, (o, i) => o)
+                .Where(l => l.LicenseSoftwares.Select(ls => ls.SoftwareId).Any(sids => sids == software.Id))
+                .Where(l => l.BeginDate < now && now < l.ExpirationDate);
+
+            var totalRecords = query.Count();
+
+            var keySelector = GetByStructureUnitIdOrderingSelecetor(request.Ordering.Sort);
+            IEnumerable<License> licenses;
+            if (string.IsNullOrEmpty(request.Ordering.Order) || request.Ordering.Order.ToLower() != "desc")
             {
-                var sus = unitOfWork.StructureUnitRepository.GetAll().Join(request.SuGuids, o => o.UniqueId, i => i, (o, i) => o);
-                var software = unitOfWork.SoftwareRepository.GetAll().Single(s => s.UniqueId == request.SoftwareId);
-                var query = unitOfWork.LicenseRepository.GetAll().Join(sus, o => o.StructureUnitId, i => i.Id, (o, i) => o)
-                    .Where(l => l.LicenseSoftwares.Select(ls => ls.SoftwareId).Any(sids => sids == software.Id))
-                    .Where(l => l.BeginDate < now && now < l.ExpirationDate);
-
-                var totalRecords = query.Count();
-
-                var keySelector = GetByStructureUnitIdOrderingSelecetor(request.Ordering.Sort);
-                IEnumerable<License> licenses;
-                if (string.IsNullOrEmpty(request.Ordering.Order) || request.Ordering.Order.ToLower() != "desc")
-                {
-                    licenses =
-                        query.OrderBy(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
-                }
-                else
-                {
-                    licenses =
-                        query.OrderByDescending(keySelector)
-                            .Skip(request.Paging.PageIndex * request.Paging.PageSize)
-                            .Take(request.Paging.PageSize);
-                }
-                var items = licenses.Select(MapperFromModelToView.MapToShortLicenseModel).ToArray();
-                response.Model.Items = items;
-                response.Model.TotalRecords = totalRecords;
-                response.Status = GetAvailableLicensesBySoftwareIdStatus.Success;
-                return response;
+                licenses =
+                    query.OrderBy(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
             }
+            else
+            {
+                licenses =
+                    query.OrderByDescending(keySelector)
+                        .Skip(request.Paging.PageIndex * request.Paging.PageSize)
+                        .Take(request.Paging.PageSize);
+            }
+            var items = licenses.Select(MapperFromModelToView.MapToShortLicenseModel).ToArray();
+            response.Model.Items = items;
+            response.Model.TotalRecords = totalRecords;
+            response.Status = GetAvailableLicensesBySoftwareIdStatus.Success;
+            return response;
         }
 
         #endregion

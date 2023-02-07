@@ -10,19 +10,12 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices.Mappers
     {
         public static string GetErrorMessage(ObservableDeleteStatus status)
         {
-            string result;
-            switch (status)
+            string result = status switch
             {
-                case ObservableDeleteStatus.NotExist:
-                    result = "Cannot delete. License not exist";
-                    break;
-                case ObservableDeleteStatus.AppendedToMachine:
-                    result = "Cannot delete. Observable appended to machine";
-                    break;
-                default:
-                    result = "Unknown error";
-                    break;
-            }
+                ObservableDeleteStatus.NotExist => "Cannot delete. License not exist",
+                ObservableDeleteStatus.AppendedToMachine => "Cannot delete. Observable appended to machine",
+                _ => "Unknown error",
+            };
             return result;
         }
     }

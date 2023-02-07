@@ -6,6 +6,7 @@ using SWI.SoftStock.ServerApps.WebApplicationContracts.SoftwareService.GetSoftwa
 using SWI.SoftStock.ServerApps.WebApplicationModel;
 using SWI.SoftStock.ServerApps.WebApplicationModel.Collections;
 using SWI.SoftStock.ServerApps.WebApplicationServices;
+using SWI.SoftStock.WebApi.Common;
 using System;
 using System.Linq;
 using System.Security.Claims;
@@ -16,7 +17,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Personal
     [ApiController]
     [Authorize]
     [Route("api/personal")]
-    public class PersonalController : ControllerBase
+    public class PersonalController : AuthorizedBaseController
     {
         private readonly IPersonalMachineService machineService;
         private readonly ISoftwareService softwareService;
@@ -40,12 +41,10 @@ namespace SWI.SoftStock.WebApi.Controllers.Personal
             }
 
             ordering ??= new OrderingModel();
-
-            var claimsIdentity = (ClaimsIdentity)this.User.Identity;
-            var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
+           
             var request = new GetByUserIdRequest
             {
-                UserId = Guid.Parse(userId),
+                UserId = Guid.Parse(UserId),
                 Ordering = MapperFromViewToModel.MapToOrdering(ordering),
                 Paging = MapperFromViewToModel.MapToPaging(paging)
             };

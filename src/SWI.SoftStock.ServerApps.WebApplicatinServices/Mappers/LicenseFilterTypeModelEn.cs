@@ -12,22 +12,13 @@ namespace SWI.SoftStock.WebApplications.Main.Mappers
     {
         public static string GetDescription(int licenseFilterType)
         {
-            string result;
-            switch (licenseFilterType)
+            string result = licenseFilterType switch
             {
-                case (Int32) (LicenseFilterType.Licensed | LicenseFilterType.Unlicensed):
-                    result = "All";
-                    break;
-                case (Int32) LicenseFilterType.Licensed:
-                    result = "Licensed";
-                    break;
-                case (Int32) LicenseFilterType.Unlicensed:
-                    result = "Unlicensed";
-                    break;
-                default:
-                    result = "Unknown filter";
-                    break;
-            }
+                (Int32)(LicenseFilterType.Licensed | LicenseFilterType.Unlicensed) => "All",
+                (Int32)LicenseFilterType.Licensed => "Licensed",
+                (Int32)LicenseFilterType.Unlicensed => "Unlicensed",
+                _ => "Unknown filter",
+            };
             return result;
         }
     }

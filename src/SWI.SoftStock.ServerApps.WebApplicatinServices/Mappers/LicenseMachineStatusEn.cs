@@ -9,28 +9,15 @@ namespace SWI.SoftStock.WebApplications.Main.Mappers
     {
         public static string GetErrorMessage(LicenseMachineStatus status)
         {
-            string result;
-            switch (status)
+            string result = status switch
             {
-                case LicenseMachineStatus.MachineNotFound:
-                    result = "Machine not found";
-                    break;
-                case LicenseMachineStatus.LicenseNotFound:
-                    result = "License not found";
-                    break;
-                case LicenseMachineStatus.LicenseCountExceeded:
-                    result = "License count exceeded";
-                    break;
-                case LicenseMachineStatus.SoftwareOnMachineNotFound:
-                    result = "Software on machine not found";
-                    break;
-                case LicenseMachineStatus.SoftwareIsLinked:
-                    result = "Software on machine allready linked to license";
-                    break;
-                default:
-                    result = "Unknown error";
-                    break;
-            }
+                LicenseMachineStatus.MachineNotFound => "Machine not found",
+                LicenseMachineStatus.LicenseNotFound => "License not found",
+                LicenseMachineStatus.LicenseCountExceeded => "License count exceeded",
+                LicenseMachineStatus.SoftwareOnMachineNotFound => "Software on machine not found",
+                LicenseMachineStatus.SoftwareIsLinked => "Software on machine allready linked to license",
+                _ => "Unknown error",
+            };
             return result;
         }
     }

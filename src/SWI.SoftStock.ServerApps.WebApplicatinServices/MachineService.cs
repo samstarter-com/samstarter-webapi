@@ -37,27 +37,25 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         public async Task<MachineModelEx> GetByIdAsync(Guid uniqueId)
         {
             var dbContext = dbFactory.Create();
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
-            {
-                Machine machine = await
-                    unitOfWork.MachineRepository.GetAll()
-                        .Include(m => m.CurrentUser)
-                        .Include(m => m.CurrentDomainUser)
-                        .Include(m => m.CurrentLinkedStructureUnit)
-                        .Include(m => m.MachineSoftwaresReadOnly)
-                        .Include(m => m.NetworkAdapters)
-                        .Include(m => m.MachineObservedProcesses)
-                        .Include(m => m.Processor)
-                        .Include(m => m.MachineOperationSystem)
-                        .ThenInclude(m => m.OperationSystem)
-                        .Include(m => m.MachineObservedProcesses)
-                        .ThenInclude(mop => mop.Observable)
-                        .ThenInclude(o => o.Software)
-                        .SingleAsync(m => m.UniqueId == uniqueId);
-                return machine != null
-                           ? MapperFromModelToView.MapToMachineModelEx(machine)
-                           : null;
-            }
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
+            Machine machine = await
+                unitOfWork.MachineRepository.GetAll()
+                    .Include(m => m.CurrentUser)
+                    .Include(m => m.CurrentDomainUser)
+                    .Include(m => m.CurrentLinkedStructureUnit)
+                    .Include(m => m.MachineSoftwaresReadOnly)
+                    .Include(m => m.NetworkAdapters)
+                    .Include(m => m.MachineObservedProcesses)
+                    .Include(m => m.Processor)
+                    .Include(m => m.MachineOperationSystem)
+                    .ThenInclude(m => m.OperationSystem)
+                    .Include(m => m.MachineObservedProcesses)
+                    .ThenInclude(mop => mop.Observable)
+                    .ThenInclude(o => o.Software)
+                    .SingleAsync(m => m.UniqueId == uniqueId);
+            return machine != null
+                       ? MapperFromModelToView.MapToMachineModelEx(machine)
+                       : null;
         }
 
         /// <summary>
@@ -71,67 +69,65 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 Model = new MachineCollection(request.Ordering.Order, request.Ordering.Sort)
             };
             var dbContext = dbFactory.Create();
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
+            var structureUnit =
+                unitOfWork.StructureUnitRepository.Query(s => s.UniqueId == request.StructureUnitId).Single();
+            IQueryable<Machine> query;
+            Expression<Func<Machine, bool>> machineTypeWhere = (m => true);
+            switch (request.MachineType)
             {
-                var structureUnit =
-                    unitOfWork.StructureUnitRepository.Query(s => s.UniqueId == request.StructureUnitId).Single();
-                IQueryable<Machine> query;
-                Expression<Func<Machine, bool>> machineTypeWhere = (m => true);
-                switch (request.MachineType)
-                {
-                    case MachineFilterType.Disabled:
-                        machineTypeWhere = (m => m.IsDisabled);
-                        break;
-                    case MachineFilterType.Enabled:
-                        machineTypeWhere = (m => !m.IsDisabled);
-                        break;
-                    case MachineFilterType.Disabled | MachineFilterType.Enabled:
-                        machineTypeWhere = (m => true);
-                        break;
-                    default:
-                        response.Status = GetByStructureUnitIdStatus.Success;
-                        return response;
-                }
-
-                if (!request.IncludeItemsOfSubUnits)
-                {
-                    query =
-                        unitOfWork.MachineRepository.Query(machineTypeWhere).Where(
-                            m => m.CurrentLinkedStructureUnitId == structureUnit.Id);
-                }
-                else
-                {
-                    var structureUnitIds =
-                        structureUnit.Descendants(sud => sud.ChildStructureUnits).Select(su => su.Id);
-                    query = unitOfWork.MachineRepository.Query(machineTypeWhere)
-                        .Where(m => structureUnitIds.Contains(m.CurrentLinkedStructureUnitId));
-                }
-
-                var totalRecords = query.Count();
-                query = query.Include(m => m.MachineOperationSystem)
-                    .Include(m => m.MachineOperationSystem.OperationSystem)
-                    .Include(m => m.MachineSoftwaresReadOnly)
-                    .Include(m => m.CurrentDomainUser)
-                    .Include(m => m.CurrentUser);
-                var keySelector = this.GetByStructureUnitIdMachineOrderingSelector(request.Ordering.Sort);
-                if (string.IsNullOrEmpty(request.Ordering.Order) || request.Ordering.Order.ToLower() != "desc")
-                {
-                    query = query.OrderBy(keySelector);
-                }
-                else
-                {
-                    query =
-                        query.OrderByDescending(keySelector);
-                }
-
-                var machines = query.Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
-                var items = await machines.ToArrayAsync();
-                    
-                response.Model.Items = items.Select(MapperFromModelToView.MapToMachineModel<MachineModel>);
-                response.Model.TotalRecords = totalRecords;
-                response.Status = GetByStructureUnitIdStatus.Success;
-                return response;
+                case MachineFilterType.Disabled:
+                    machineTypeWhere = (m => m.IsDisabled);
+                    break;
+                case MachineFilterType.Enabled:
+                    machineTypeWhere = (m => !m.IsDisabled);
+                    break;
+                case MachineFilterType.Disabled | MachineFilterType.Enabled:
+                    machineTypeWhere = (m => true);
+                    break;
+                default:
+                    response.Status = GetByStructureUnitIdStatus.Success;
+                    return response;
             }
+
+            if (!request.IncludeItemsOfSubUnits)
+            {
+                query =
+                    unitOfWork.MachineRepository.Query(machineTypeWhere).Where(
+                        m => m.CurrentLinkedStructureUnitId == structureUnit.Id);
+            }
+            else
+            {
+                var structureUnitIds =
+                    structureUnit.Descendants(sud => sud.ChildStructureUnits).Select(su => su.Id);
+                query = unitOfWork.MachineRepository.Query(machineTypeWhere)
+                    .Where(m => structureUnitIds.Contains(m.CurrentLinkedStructureUnitId));
+            }
+
+            var totalRecords = query.Count();
+            query = query.Include(m => m.MachineOperationSystem)
+                .Include(m => m.MachineOperationSystem.OperationSystem)
+                .Include(m => m.MachineSoftwaresReadOnly)
+                .Include(m => m.CurrentDomainUser)
+                .Include(m => m.CurrentUser);
+            var keySelector = this.GetByStructureUnitIdMachineOrderingSelector(request.Ordering.Sort);
+            if (string.IsNullOrEmpty(request.Ordering.Order) || request.Ordering.Order.ToLower() != "desc")
+            {
+                query = query.OrderBy(keySelector);
+            }
+            else
+            {
+                query =
+                    query.OrderByDescending(keySelector);
+            }
+
+            var machines = query.Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
+            var items = await machines.ToArrayAsync();
+
+            response.Model.Items = items.Select(MapperFromModelToView.MapToMachineModel<MachineModel>);
+            response.Model.TotalRecords = totalRecords;
+            response.Status = GetByStructureUnitIdStatus.Success;
+            return response;
         }
 
         public async Task<MachineLinkToStructureUnitStatus> LinkToStructureUnitAsync(Guid machineId, Guid structureUnitId)
@@ -176,10 +172,12 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 }
                 
                 machine.CurrentUserId = userId;
-                var machineUser = new MachineUser();
-                machineUser.LinkDateTime = DateTime.UtcNow;
-                machineUser.MachineId = machine.Id;
-                machineUser.UserUserId = userId;
+                var machineUser = new MachineUser
+                {
+                    LinkDateTime = DateTime.UtcNow,
+                    MachineId = machine.Id,
+                    UserUserId = userId
+                };
 
                 unitOfWork.MachineUserRepository.Add(machineUser);
                 unitOfWork.MachineRepository.Update(machine, machine.Id);
@@ -195,89 +193,87 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             var licenseFilterType = (LicenseFilterType)request.FilterType;
             response.Model = new SoftwareMachineCollection(request.Ordering.Order, request.Ordering.Sort);
             var dbContext = dbFactory.Create();
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
+            var software = unitOfWork.SoftwareRepository.GetAll().SingleOrDefault(s => s.UniqueId == request.SoftwareId);
+            if (software == null)
             {
-                var software = unitOfWork.SoftwareRepository.GetAll().SingleOrDefault(s => s.UniqueId == request.SoftwareId);
-                if (software == null)
-                {
-                    response.Status = GetBySoftwareIdStatus.SoftwareNotFound;
-                    return response;
-                }
-                response.Model.SoftwareName = !string.IsNullOrEmpty(software.Name) ? software.Name : "No name";
-
-                Expression<Func<MachineSoftware, bool>> filter = ms => true;
-                switch (licenseFilterType)
-                {
-                    case (LicenseFilterType.Licensed | LicenseFilterType.Unlicensed):
-                        filter = ms => true;
-                        break;
-                    case LicenseFilterType.Licensed:
-                        filter =
-                            ms => ms.LicenseMachineSoftwares.Any(lms => !lms.IsDeleted);
-                        break;
-                    case LicenseFilterType.Unlicensed:
-                        filter =
-                            ms =>
-                                ms.LicenseMachineSoftwares.Count == 0 ||
-                                ms.LicenseMachineSoftwares.All(lms => lms.IsDeleted);
-                        break;
-                }
-
-                var query = unitOfWork.SoftwareRepository.GetAll()
-                    .Where(s => s.UniqueId == request.SoftwareId)
-                    .SelectMany(s => s.MachineSoftwares)
-                    .Where(filter)
-                    .Distinct()
-                    .Where(ms =>
-                        !ms.Machine.IsDisabled &&
-                        request.SuIds.Contains(ms.Machine.CurrentLinkedStructureUnit.UniqueId));
-
-                int totalRecords = await query.CountAsync();
-                var keySelector = this.GetBySoftwareIdOrderingSelecetor(request.Ordering.Sort);
-
-                var machines = (string.IsNullOrEmpty(request.Ordering.Order) || request.Ordering.Order.ToLower() != "desc") ?
-                     query.OrderBy(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize) :
-                     query.OrderByDescending(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
-
-                var items = await machines.Select(ms => MapperFromModelToView.MapToInstalledSoftwareMachineModel(ms)).ToArrayAsync();
-
-                response.Model.Items = items;
-                response.Model.TotalRecords = totalRecords;
-                response.Status = GetBySoftwareIdStatus.Success;
+                response.Status = GetBySoftwareIdStatus.SoftwareNotFound;
                 return response;
             }
+            response.Model.SoftwareName = !string.IsNullOrEmpty(software.Name) ? software.Name : "No name";
+
+            Expression<Func<MachineSoftware, bool>> filter = ms => true;
+            switch (licenseFilterType)
+            {
+                case (LicenseFilterType.Licensed | LicenseFilterType.Unlicensed):
+                    filter = ms => true;
+                    break;
+                case LicenseFilterType.Licensed:
+                    filter =
+                        ms => ms.LicenseMachineSoftwares.Any(lms => !lms.IsDeleted);
+                    break;
+                case LicenseFilterType.Unlicensed:
+                    filter =
+                        ms =>
+                            ms.LicenseMachineSoftwares.Count == 0 ||
+                            ms.LicenseMachineSoftwares.All(lms => lms.IsDeleted);
+                    break;
+            }
+
+            var query = unitOfWork.SoftwareRepository.GetAll()
+                .Where(s => s.UniqueId == request.SoftwareId)
+                .SelectMany(s => s.MachineSoftwares)
+                .Where(filter)
+                .Distinct()
+                .Where(ms =>
+                    !ms.Machine.IsDisabled &&
+                    request.SuIds.Contains(ms.Machine.CurrentLinkedStructureUnit.UniqueId));
+
+            int totalRecords = await query.CountAsync();
+            var keySelector = this.GetBySoftwareIdOrderingSelecetor(request.Ordering.Sort);
+
+            var machines = (string.IsNullOrEmpty(request.Ordering.Order) || request.Ordering.Order.ToLower() != "desc") ?
+                 query.OrderBy(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize) :
+                 query.OrderByDescending(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
+
+            var items = await machines.Select(ms => MapperFromModelToView.MapToInstalledSoftwareMachineModel(ms)).ToArrayAsync();
+
+            response.Model.Items = items;
+            response.Model.TotalRecords = totalRecords;
+            response.Status = GetBySoftwareIdStatus.Success;
+            return response;
         }
 
         public GetByObservableIdResponse GetByObservableId(GetByObservableIdRequest request)
         {
-            GetByObservableIdResponse response = new GetByObservableIdResponse();
-            response.Model = new MachineCollection(request.Ordering.Order, request.Ordering.Sort);
-            var dbContext = dbFactory.Create();
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
+            GetByObservableIdResponse response = new GetByObservableIdResponse
             {
-                var observable =
-                    unitOfWork.ObservableRepository.GetAll().Single(m => m.UniqueId == request.ObservableId);
-                var query = unitOfWork.MachineObservedProcessRepository.GetAll().Where(mop => mop.ObservableId == observable.Id).
-                    Select(ms => ms.Machine);
-                var totalRecords = query.Count();
-                var keySelector = GetByStructureUnitIdMachineOrderingSelector(request.Ordering.Sort);
-                IEnumerable<Machine> machines;
-                if (string.IsNullOrEmpty(request.Ordering.Order) || request.Ordering.Order.ToLower() != "desc")
-                {
-                    machines = query.OrderBy(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
-                }
-                else
-                {
-                    machines =
-                        query.OrderByDescending(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
-                }
-
-                MachineModel[] items = machines.Select(MapperFromModelToView.MapToMachineModel<MachineModel>).ToArray();
-                response.Model.Items = items;
-                response.Model.TotalRecords = totalRecords;
-                response.Status = GetByObservableIdStatus.Success;
-                return response;
+                Model = new MachineCollection(request.Ordering.Order, request.Ordering.Sort)
+            };
+            var dbContext = dbFactory.Create();
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
+            var observable =
+                unitOfWork.ObservableRepository.GetAll().Single(m => m.UniqueId == request.ObservableId);
+            var query = unitOfWork.MachineObservedProcessRepository.GetAll().Where(mop => mop.ObservableId == observable.Id).
+                Select(ms => ms.Machine);
+            var totalRecords = query.Count();
+            var keySelector = GetByStructureUnitIdMachineOrderingSelector(request.Ordering.Sort);
+            IEnumerable<Machine> machines;
+            if (string.IsNullOrEmpty(request.Ordering.Order) || request.Ordering.Order.ToLower() != "desc")
+            {
+                machines = query.OrderBy(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
             }
+            else
+            {
+                machines =
+                    query.OrderByDescending(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
+            }
+
+            MachineModel[] items = machines.Select(MapperFromModelToView.MapToMachineModel<MachineModel>).ToArray();
+            response.Model.Items = items;
+            response.Model.TotalRecords = totalRecords;
+            response.Status = GetByObservableIdStatus.Success;
+            return response;
         }
 
         public MachineDeleteStatus Delete(Guid machineId)
@@ -302,24 +298,22 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         {
             GetStructureUnitIdResponse response = new GetStructureUnitIdResponse();
             var dbContext = dbFactory.Create();
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
+            Machine machine =
+                unitOfWork.MachineRepository.GetAll().SingleOrDefault(m => m.UniqueId == request.MachineId);
+            if (machine == null)
             {
-                Machine machine =
-                    unitOfWork.MachineRepository.GetAll().SingleOrDefault(m => m.UniqueId == request.MachineId);
-                if (machine == null)
-                {
-                    response.Status = GetStructureUnitIdStatus.MachineNotFound;
-                    return response;
-                }
-                if (machine.IsDisabled)
-                {
-                    response.Status = GetStructureUnitIdStatus.MachineNotFound;
-                    return response;
-                }
-                response.StructureUnitId = machine.CurrentLinkedStructureUnit.UniqueId;
-                response.Status = GetStructureUnitIdStatus.Success;
+                response.Status = GetStructureUnitIdStatus.MachineNotFound;
                 return response;
             }
+            if (machine.IsDisabled)
+            {
+                response.Status = GetStructureUnitIdStatus.MachineNotFound;
+                return response;
+            }
+            response.StructureUnitId = machine.CurrentLinkedStructureUnit.UniqueId;
+            response.Status = GetStructureUnitIdStatus.Success;
+            return response;
         }
 
         public MachineDisableStatus Disable(Guid machineId)

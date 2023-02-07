@@ -13,15 +13,12 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
     [ApiController]
     [Authorize(Policy = Constants.PolicyManager)]
     [Route("api/management/structureunit")]
-    public class StructureUnitController : ControllerBase
+    public class StructureUnitController : AuthorizedBaseController
     {
-        IStructureUnitService structureUnitService;
-
-        IUserService userService;
-
-        ILogger<StructureUnitController> log;
-
-        CustomRoleManager rolemanager;
+        readonly IStructureUnitService structureUnitService;
+        readonly IUserService userService;
+        readonly ILogger<StructureUnitController> log;
+        readonly CustomRoleManager rolemanager;
 
         public StructureUnitController(ILogger<StructureUnitController> log, IStructureUnitService structureUnitService, IUserService userService, CustomRoleManager rolemanager)
         {
@@ -39,11 +36,9 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
             const string role = "Manager";
 
             var parsed = Guid.TryParse(request.SelectedStructureUnitId, out var uniqueId);
+                       
 
-            var claimsIdentity = (ClaimsIdentity)this.User.Identity;
-            var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
-
-            var tree = this.structureUnitService.GetStructureUnitModels(Guid.Parse(userId),
+            var tree = this.structureUnitService.GetStructureUnitModels(Guid.Parse(UserId),
                 parsed
                     ? (Guid?)
                         uniqueId

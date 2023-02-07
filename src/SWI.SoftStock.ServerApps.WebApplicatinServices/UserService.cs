@@ -64,50 +64,50 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         /// <returns></returns>
         public async Task<GetByStructureUnitIdResponse> GetByStructureUnitId(GetByStructureUnitIdRequest request)
         {
-            var response = new GetByStructureUnitIdResponse();
-            response.Model = new UserCollection(request.Ordering.Order, request.Ordering.Sort);
-            var dbContext = dbFactory.Create();
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
+            var response = new GetByStructureUnitIdResponse
             {
-                var userRole = await rolemanager.FindByNameAsync("User");
-                Guid userRoleId = userRole.Id;
-                StructureUnit structureUnit = unitOfWork.StructureUnitRepository.GetAll().Single(s => s.UniqueId == request.StructureUnitId);
-                IQueryable<User> query;
-                if (!request.IncludeItemsOfSubUnits)
-                {
-                    int suId = structureUnit.Id;
-                    query =
-                        unitOfWork.StructureUnitUserRoleRepository.GetAll().Where(
-                            suur => suur.RoleRoleId == userRoleId && suur.StructureUnitId == suId).Select(
-                                suur => suur.User);
-                }
-                else
-                {
-                    IEnumerable<int> structureUnitIds =
-                        structureUnit.Descendants(sud => sud.ChildStructureUnits).Select(su => su.Id);
-                    query =
-                        unitOfWork.StructureUnitUserRoleRepository.Query(suur => suur.RoleRoleId == userRoleId).
-                            Where(suur => structureUnitIds.Contains(suur.StructureUnitId)).Select(suur => suur.User);
-                }
-
-                int totalRecords = query.Count();
-                var keySelector = GetByStructureUnitIdOrderingSelecetor(request.Ordering.Sort);
-                IEnumerable<User> users;
-                if (string.IsNullOrEmpty(request.Ordering.Order) || request.Ordering.Order.ToLower() != "desc")
-                {
-                    users = query.OrderBy(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
-                }
-                else
-                {
-                    users =
-                        query.OrderByDescending(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
-                }
-                UserModelEx[] items = users.Select(MapperFromModelToView.MapToUserModelEx).ToArray();
-                response.Model.Items = items;
-                response.Model.TotalRecords = totalRecords;
-                response.Status = GetByStructureUnitIdStatus.Success;
-                return response;
+                Model = new UserCollection(request.Ordering.Order, request.Ordering.Sort)
+            };
+            var dbContext = dbFactory.Create();
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
+            var userRole = await rolemanager.FindByNameAsync("User");
+            Guid userRoleId = userRole.Id;
+            StructureUnit structureUnit = unitOfWork.StructureUnitRepository.GetAll().Single(s => s.UniqueId == request.StructureUnitId);
+            IQueryable<User> query;
+            if (!request.IncludeItemsOfSubUnits)
+            {
+                int suId = structureUnit.Id;
+                query =
+                    unitOfWork.StructureUnitUserRoleRepository.GetAll().Where(
+                        suur => suur.RoleRoleId == userRoleId && suur.StructureUnitId == suId).Select(
+                            suur => suur.User);
             }
+            else
+            {
+                IEnumerable<int> structureUnitIds =
+                    structureUnit.Descendants(sud => sud.ChildStructureUnits).Select(su => su.Id);
+                query =
+                    unitOfWork.StructureUnitUserRoleRepository.Query(suur => suur.RoleRoleId == userRoleId).
+                        Where(suur => structureUnitIds.Contains(suur.StructureUnitId)).Select(suur => suur.User);
+            }
+
+            int totalRecords = query.Count();
+            var keySelector = GetByStructureUnitIdOrderingSelecetor(request.Ordering.Sort);
+            IEnumerable<User> users;
+            if (string.IsNullOrEmpty(request.Ordering.Order) || request.Ordering.Order.ToLower() != "desc")
+            {
+                users = query.OrderBy(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
+            }
+            else
+            {
+                users =
+                    query.OrderByDescending(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
+            }
+            UserModelEx[] items = users.Select(MapperFromModelToView.MapToUserModelEx).ToArray();
+            response.Model.Items = items;
+            response.Model.TotalRecords = totalRecords;
+            response.Status = GetByStructureUnitIdStatus.Success;
+            return response;
         }
 
         public IEnumerable<RoleModel> GetRoles()
@@ -166,11 +166,13 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
                 foreach (CustomRole r in roles)
                 {
-                    var urm = new UserRoleModel();
-                    urm.RoleId = r.Id;
-                    urm.StructureUnitId = structureUnitId;
-                    urm.IsInRole = availableRoles.Contains(r.Id);
-                    urm.RoleName = r.Name;
+                    var urm = new UserRoleModel
+                    {
+                        RoleId = r.Id,
+                        StructureUnitId = structureUnitId,
+                        IsInRole = availableRoles.Contains(r.Id),
+                        RoleName = r.Name
+                    };
                     result.Add(urm);
                 }
             }
@@ -194,10 +196,12 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
                 foreach (var ar in availableRoles)
                 {
-                    var urm = new StructureUnitRoleSimpleModel();
-                    urm.RoleName = ar.Role.Name;
-                    urm.StructureUnitName = ar.StructureUnit.ShortName;
-                    urm.StructureUnitId = ar.StructureUnit.UniqueId;
+                    var urm = new StructureUnitRoleSimpleModel
+                    {
+                        RoleName = ar.Role.Name,
+                        StructureUnitName = ar.StructureUnit.ShortName,
+                        StructureUnitId = ar.StructureUnit.UniqueId
+                    };
                     result.Add(urm);
                 }
             }
@@ -261,16 +265,14 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 if (request.Roles.Where(r => !r.IsInRole).Any())
                 {
                     var context = dbFactory.Create();
-                    using (IUnitOfWork uow = new UnitOfWork(context))
+                    using IUnitOfWork uow = new UnitOfWork(context);
+                    foreach (var role in request.Roles.Where(r => !r.IsInRole))
                     {
-                        foreach (var role in request.Roles.Where(r => !r.IsInRole))
+                        StructureUnitUserRole[] existUserRoles = uow.StructureUnitUserRoleRepository.GetAll().Where(suur => suur.UserUserId == request.UserId).ToArray();
+                        if (!existUserRoles.Any(ur => ur.Role.Name == rolemanager.Roles.Single(r => r.Id == role.RoleId).Name))
                         {
-                            StructureUnitUserRole[] existUserRoles = uow.StructureUnitUserRoleRepository.GetAll().Where(suur => suur.UserUserId == request.UserId).ToArray();
-                            if (!existUserRoles.Any(ur => ur.Role.Name == rolemanager.Roles.Single(r => r.Id == role.RoleId).Name))
-                            {
 
-                                //  await customUserManager.RemoveFromRoleAsync(request.UserId, rolemanager.Roles.Single(r => r.Id == role.RoleId).Name);
-                            }
+                            //  await customUserManager.RemoveFromRoleAsync(request.UserId, rolemanager.Roles.Single(r => r.Id == role.RoleId).Name);
                         }
                     }
                 }
@@ -281,18 +283,16 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         public async Task<bool> IsUserInRole(Guid userId, string roleName, Guid structureUnitUniqId)
         {
             var context = dbFactory.Create();
-            using (IUnitOfWork uow = new UnitOfWork(context))
-            {
-                CustomRole role = await rolemanager.FindByNameAsync(roleName);
-                var user = customUserManager.Users.SingleOrDefault(u => u.Id == userId);
-                //.Include(usr => usr.StructureUnitRoles)
-                //.Include(usr => usr.StructureUnitRoles.Select(sur => sur.StructureUnit))
+            using IUnitOfWork uow = new UnitOfWork(context);
+            CustomRole role = await rolemanager.FindByNameAsync(roleName);
+            var user = customUserManager.Users.SingleOrDefault(u => u.Id == userId);
+            //.Include(usr => usr.StructureUnitRoles)
+            //.Include(usr => usr.StructureUnitRoles.Select(sur => sur.StructureUnit))
 
-                var userStructureUnitIds = user.StructureUnitRoles.Where(sur => sur.RoleRoleId == role.Id).Select(sur => sur.StructureUnit.UniqueId);
-                StructureUnit structureUnit = uow.StructureUnitRepository.GetAll().Include(usr => usr.ParentStructureUnit).Single(su => su.UniqueId == structureUnitUniqId);
-                var structureUnitChains = structureUnit.Ancestors(true, su => su.ParentStructureUnit).Select(su => su.UniqueId);
-                return structureUnitChains.Intersect(userStructureUnitIds).Any();
-            }
+            var userStructureUnitIds = user.StructureUnitRoles.Where(sur => sur.RoleRoleId == role.Id).Select(sur => sur.StructureUnit.UniqueId);
+            StructureUnit structureUnit = uow.StructureUnitRepository.GetAll().Include(usr => usr.ParentStructureUnit).Single(su => su.UniqueId == structureUnitUniqId);
+            var structureUnitChains = structureUnit.Ancestors(true, su => su.ParentStructureUnit).Select(su => su.UniqueId);
+            return structureUnitChains.Intersect(userStructureUnitIds).Any();
         }
 
         private async Task<UserRoleUpdateStatus> SetUsersRolesAsync(Guid userId, Guid structureUnitId, IEnumerable<UserRoleModel> userRoles)
@@ -370,93 +370,85 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         public UserModelEx GetById(Guid userId)
         {
             var dbContext = dbFactory.Create();
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
-            {
-                var user = customUserManager.Users.SingleOrDefault(u => u.Id == userId);
-                return user != null
-                    ? MapperFromModelToView.MapToUserModelEx(user)
-                    : null;
-            }
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
+            var user = customUserManager.Users.SingleOrDefault(u => u.Id == userId);
+            return user != null
+                ? MapperFromModelToView.MapToUserModelEx(user)
+                : null;
         }
 
         public async Task<UserUpdateStatus> UpdateAsync(UserModelEx model)
         {
             // todo if the Username or Email has changed, then the user will be sent a notification to the new and old Email about who and what has changed
             var dbContext = dbFactory.Create();
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
+
+            var user = customUserManager.Users.SingleOrDefault(u => u.Id == model.UserId);
+            if (user == null)
             {
-
-                var user = customUserManager.Users.SingleOrDefault(u => u.Id == model.UserId);
-                if (user == null)
-                {
-                    return UserUpdateStatus.NotExist;
-                }
-                if (!model.Equals(user))
-                {
-                    user.UserName = model.UserName.Trim();
-                    user.LastName = model.LastName.Trim();
-                    user.FirstName = model.FirstName.Trim();
-                    user.Email = model.Email.Trim();
-                    StructureUnitUserRole structureUnitRole = user.StructureUnitRoles.Single(sur => sur.Role.Name == "User");
-                    if (structureUnitRole.StructureUnit.UniqueId != model.StructureUnitId)
-                    {
-                        structureUnitRole.StructureUnitId = unitOfWork.StructureUnitRepository.GetAll().Single(su => su.UniqueId == model.StructureUnitId).Id;
-                        unitOfWork.StructureUnitUserRoleRepository.Update(structureUnitRole, structureUnitRole.Id);
-                    }
-                    if (customUserManager.Users.Any(usr => usr.UserName == user.UserName && usr.Id != user.Id))
-                    //if (unitOfWork.UserRepository.GetAll().Any(usr => usr.UserName == user.UserName && usr.Id != user.Id))
-                    {
-                        return UserUpdateStatus.NonUnique;
-                    }
-
-                    if (customUserManager.Users.Any(usr => usr.Email == user.Email && usr.Id != user.Id))
-                    {
-                        return UserUpdateStatus.EmailNonUnique;
-                    }
-
-                    await customUserManager.UpdateAsync(user);
-                    unitOfWork.Save();
-                }
-                return UserUpdateStatus.Success;
+                return UserUpdateStatus.NotExist;
             }
+            if (!model.Equals(user))
+            {
+                user.UserName = model.UserName.Trim();
+                user.LastName = model.LastName.Trim();
+                user.FirstName = model.FirstName.Trim();
+                user.Email = model.Email.Trim();
+                StructureUnitUserRole structureUnitRole = user.StructureUnitRoles.Single(sur => sur.Role.Name == "User");
+                if (structureUnitRole.StructureUnit.UniqueId != model.StructureUnitId)
+                {
+                    structureUnitRole.StructureUnitId = unitOfWork.StructureUnitRepository.GetAll().Single(su => su.UniqueId == model.StructureUnitId).Id;
+                    unitOfWork.StructureUnitUserRoleRepository.Update(structureUnitRole, structureUnitRole.Id);
+                }
+                if (customUserManager.Users.Any(usr => usr.UserName == user.UserName && usr.Id != user.Id))
+                //if (unitOfWork.UserRepository.GetAll().Any(usr => usr.UserName == user.UserName && usr.Id != user.Id))
+                {
+                    return UserUpdateStatus.NonUnique;
+                }
+
+                if (customUserManager.Users.Any(usr => usr.Email == user.Email && usr.Id != user.Id))
+                {
+                    return UserUpdateStatus.EmailNonUnique;
+                }
+
+                await customUserManager.UpdateAsync(user);
+                unitOfWork.Save();
+            }
+            return UserUpdateStatus.Success;
         }
 
         public async Task<UserDeleteStatus> DeleteById(Guid userId)
         {
             var dbContext = dbFactory.Create();
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
+            var user = customUserManager.Users.SingleOrDefault(u => u.Id == userId);
+
+            UserDeleteStatus status = CheckBeforeDelete(user);
+            if (status != UserDeleteStatus.None)
             {
-                var user = customUserManager.Users.SingleOrDefault(u => u.Id == userId);
-
-                UserDeleteStatus status = CheckBeforeDelete(user);
-                if (status != UserDeleteStatus.None)
-                {
-                    return status;
-                }
-                try
-                {
-                    await customUserManager.DeleteAsync(user);
-                    unitOfWork.Save();
-                }
-                catch (Exception e)
-                {
-                    log.LogError(0, e, e.Message);
-                    return UserDeleteStatus.UnknownError;
-                }
-
                 return status;
             }
+            try
+            {
+                await customUserManager.DeleteAsync(user);
+                unitOfWork.Save();
+            }
+            catch (Exception e)
+            {
+                log.LogError(0, e, e.Message);
+                return UserDeleteStatus.UnknownError;
+            }
+
+            return status;
         }
 
         public Guid GetCompanyId(Guid userId)
         {
             var dbContext = dbFactory.Create();
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
-            {
-                var user = customUserManager.Users.SingleOrDefault(u => u.Id == userId);
-                // todo check that the user user exists, if not then return the status UserNotFound
-                return user.Company.UniqueId;
-            }
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
+            var user = customUserManager.Users.SingleOrDefault(u => u.Id == userId);
+            // todo check that the user user exists, if not then return the status UserNotFound
+            return user.Company.UniqueId;
         }
 
         #endregion

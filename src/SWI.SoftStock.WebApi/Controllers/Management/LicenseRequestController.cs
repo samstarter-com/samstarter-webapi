@@ -21,7 +21,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
     [ApiController]
     [Authorize(Policy = Constants.PolicyManager)]
     [Route("api/management/licenserequests")]
-    public class LicenseRequestController : ControllerBase
+    public class LicenseRequestController : AuthorizedBaseController
     {
         private readonly ILogger<LicenseRequestController> log;
         private readonly ILicenseRequestService licenseRequestService;
@@ -116,15 +116,13 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
                 return this.StatusCode(StatusCodes.Status500InternalServerError,
                     new FailedResponse() { Errors = errors });
             }
-         
-            var claimsIdentity = (ClaimsIdentity)this.User.Identity;
-            var userId = Guid.Parse(claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value);
+                    
+            var userId = Guid.Parse(UserId);
 
-            SaveLicenseRequestStatus status;
             var licenseRequestId = this.licenseRequestService.Add(model,
                 userId,
                 model.Sending,
-                out status);
+                out SaveLicenseRequestStatus status);
             var message = SaveLicenseRequestStatusEn.GetErrorMessage(status);
             switch (status)
             {

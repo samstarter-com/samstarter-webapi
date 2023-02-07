@@ -9,16 +9,11 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices.Mappers
     {
         public static string GetErrorMessage(MachineDeleteStatus status)
         {
-            string result;
-            switch (status)
+            string result = status switch
             {
-                case MachineDeleteStatus.NotExist:
-                    result = "Cannot delete. Machine not exist";
-                    break;
-                default:
-                    result = "Unknown error";
-                    break;
-            }
+                MachineDeleteStatus.NotExist => "Cannot delete. Machine not exist",
+                _ => "Unknown error",
+            };
             return result;
         }
     }

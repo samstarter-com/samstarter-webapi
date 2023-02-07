@@ -25,7 +25,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Administration
     [ApiController]
     [Authorize(Policy = Constants.PolicyAdministrator)]
     [Route("api/administration/users")]
-    public class UserController : ControllerBase
+    public class UserController : AuthorizedBaseController
     {
         private readonly ILogger<UserController> log;
 
@@ -103,12 +103,10 @@ namespace SWI.SoftStock.WebApi.Controllers.Administration
         [HttpPost]
         [Route("{userId}/roles")]
         public async Task<IActionResult> ChangeRole(Guid userId, [FromBody] IEnumerable<UserRoleModel> roles)
-        {
-            var claimsIdentity = (ClaimsIdentity)this.User.Identity;
-            var authenticatedUserId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
+        {           
 
             var suIds = roles.Select(r => r.StructureUnitId).Distinct();
-            if (suIds.Any(suId => !this.userService.IsUserInRole(Guid.Parse(authenticatedUserId), "Admin", suId).Result))
+            if (suIds.Any(suId => !this.userService.IsUserInRole(Guid.Parse(UserId), "Admin", suId).Result))
             {
                 throw new UnauthorizedAccessException();
             }
@@ -151,10 +149,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Administration
         [HttpPost]
         [Route("{userId}")]
         public async Task<IActionResult> Update(UserModelEx model)
-        {
-            var claimsIdentity = (ClaimsIdentity)this.User.Identity;
-            var authenticatedUserId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
-
+        {          
             if (this.ModelState.IsValid)
             {
                 var status = await this.userService.UpdateAsync(model);
@@ -167,11 +162,11 @@ namespace SWI.SoftStock.WebApi.Controllers.Administration
                         return this.StatusCode(StatusCodes.Status500InternalServerError, new FailedResponse() { Errors = new[] { "User not found" } });
                     case UserUpdateStatus.NonUnique:
                         var error = $"User with name {model.UserName} exists. User must be unique.";
-                        this.log.LogWarning("Cannot update. model:{0} parentId:{1} Error:{2}", model, authenticatedUserId, error);
+                        this.log.LogWarning("Cannot update. model:{0} parentId:{1} Error:{2}", model, UserId, error);
                         return this.StatusCode(StatusCodes.Status500InternalServerError, new FailedResponse() { Errors = new[] { error } });
                     case UserUpdateStatus.EmailNonUnique:
                         error = $"User with email {model.Email} exists. User must have unique email.";
-                        this.log.LogWarning("Cannot update. model:{0} parentId:{1} Error:{2}", model, authenticatedUserId, error);
+                        this.log.LogWarning("Cannot update. model:{0} parentId:{1} Error:{2}", model, UserId, error);
                         return this.StatusCode(StatusCodes.Status500InternalServerError, new FailedResponse() { Errors = new[] { error } });
                     default:
                         throw new ArgumentOutOfRangeException();
@@ -202,9 +197,8 @@ namespace SWI.SoftStock.WebApi.Controllers.Administration
         [HttpDelete]
         [Route("{userId}")]
         public async Task<IActionResult> Delete(Guid userId)
-        {
-            var claimsIdentity = (ClaimsIdentity)this.User.Identity;
-            var currentUserId = Guid.Parse(claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value);
+        {           
+            var currentUserId = Guid.Parse(UserId);
 
             if (userId == currentUserId)
             {

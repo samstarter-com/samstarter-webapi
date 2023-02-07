@@ -27,51 +27,49 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         public ObservableModelEx GetObservableModelById(Guid observableId)
         {
             var dbContext = dbFactory.Create();
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
-            {
-                Observable observable =
-                    unitOfWork.ObservableRepository.GetAll().Single(m => m.UniqueId == observableId);
-                return observable != null
-                           ? MapperFromModelToView.MapToObservableModelEx(observable)
-                           : null;
-            }
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
+            Observable observable =
+                unitOfWork.ObservableRepository.GetAll().Single(m => m.UniqueId == observableId);
+            return observable != null
+                       ? MapperFromModelToView.MapToObservableModelEx(observable)
+                       : null;
         }
 
         public GetAllResponse GetAll(GetAllRequest request)
         {
-            GetAllResponse response = new GetAllResponse();
-            response.Model = new ObservableExCollection(request.Ordering.Order, request.Ordering.Sort);
-            var dbContext = dbFactory.Create();
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
+            GetAllResponse response = new GetAllResponse
             {
+                Model = new ObservableExCollection(request.Ordering.Order, request.Ordering.Sort)
+            };
+            var dbContext = dbFactory.Create();
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
 
-                IQueryable<Observable> query = unitOfWork.ObservableRepository.Query(o => o.Company.UniqueId == request.CompanyId);
-                if (!string.IsNullOrEmpty(request.Prname))
-                {
-                    query = query.Where(o => o.ProcessName.Contains(request.Prname));
-                }
-                if (request.FilterSoftwareId.HasValue)
-                {
-                    query = query.Where(o => o.Software.UniqueId == request.FilterSoftwareId);
-                }
-                int totalRecords = query.Count();
-                var keySelector = GetAllOrderingSelecetor(request.Ordering.Sort);
-                IEnumerable<Observable> observables;
-                if (string.IsNullOrEmpty(request.Ordering.Order) || request.Ordering.Order.ToLower() != "desc")
-                {
-                    observables = query.OrderBy(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
-                }
-                else
-                {
-                    observables =
-                        query.OrderByDescending(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
-                }
-                ObservableModelEx[] items = observables.Select(MapperFromModelToView.MapToObservableModelEx).ToArray();
-                response.Model.Items = items;
-                response.Model.TotalRecords = totalRecords;
-                response.Status = GetAllStatus.Success;
-                return response;
+            IQueryable<Observable> query = unitOfWork.ObservableRepository.Query(o => o.Company.UniqueId == request.CompanyId);
+            if (!string.IsNullOrEmpty(request.Prname))
+            {
+                query = query.Where(o => o.ProcessName.Contains(request.Prname));
             }
+            if (request.FilterSoftwareId.HasValue)
+            {
+                query = query.Where(o => o.Software.UniqueId == request.FilterSoftwareId);
+            }
+            int totalRecords = query.Count();
+            var keySelector = GetAllOrderingSelecetor(request.Ordering.Sort);
+            IEnumerable<Observable> observables;
+            if (string.IsNullOrEmpty(request.Ordering.Order) || request.Ordering.Order.ToLower() != "desc")
+            {
+                observables = query.OrderBy(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
+            }
+            else
+            {
+                observables =
+                    query.OrderByDescending(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
+            }
+            ObservableModelEx[] items = observables.Select(MapperFromModelToView.MapToObservableModelEx).ToArray();
+            response.Model.Items = items;
+            response.Model.TotalRecords = totalRecords;
+            response.Status = GetAllStatus.Success;
+            return response;
         }
 
         public Guid? Add(ObservableModelEx modelEx, Guid companyId, Guid createdByUserId, out ObservableCreationStatus status)
@@ -136,10 +134,12 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                     status = ObservableAppendStatus.AlreadyAppended;
                     return null;
                 }
-                machineObservedProcess = new MachineObservedProcess();
-                machineObservedProcess.ObservableId = observable.Id;
-                machineObservedProcess.MachineId = machine.Id;
-                machineObservedProcess.CreatedOn = DateTime.UtcNow;
+                machineObservedProcess = new MachineObservedProcess
+                {
+                    ObservableId = observable.Id,
+                    MachineId = machine.Id,
+                    CreatedOn = DateTime.UtcNow
+                };
                 unitOfWork.MachineObservedProcessRepository.Add(machineObservedProcess);
                 unitOfWork.Save();
             }

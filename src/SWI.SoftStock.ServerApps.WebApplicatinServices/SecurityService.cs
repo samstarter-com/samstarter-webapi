@@ -65,45 +65,43 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             var model = request.RegisterModel;
             try
             {
-                using (var tranScope = new System.Transactions.TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+                using var tranScope = new System.Transactions.TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+                var (user, status) = await CreateUserAsync(model.UserName,
+                    model.Password,
+                    model.Email,
+                    model.CompanyName);
+
+                if (status != RegisterCompanyStatus.Success)
                 {
-                    var (user, status) = await CreateUserAsync(model.UserName,
-                        model.Password,
-                        model.Email,
-                        model.CompanyName);
-
-                    if (status != RegisterCompanyStatus.Success)
-                    {
-                        log.LogWarning("CodeFirstMembershipProvider.CreateUser return status:{0}", status);
-                        return new RegisterCompanyResponse { Status = status };
-                    }
-
-                    var (companyId, structureUnitId) = structureUnitService.GetCompanyIdByName(model.CompanyName);
-                    var userId = user.Id;
-                    var setUsersRolesRequest = new SetUsersRolesRequest
-                    {
-                        UserId = userId,
-                        Roles = new[] {
-                            new RoleData() { RoleId = customRoleManager.Roles.Single(r=>r.Name== "Admin").Id,  IsInRole = true },
-                            new RoleData() { RoleId = customRoleManager.Roles.Single(r => r.Name == "User").Id, IsInRole = true } },
-                        StructureUnitId = structureUnitId
-                    };
-                    var setUsersRolesResponse = await userService.SetUsersRolesAsync(setUsersRolesRequest);
-
-                    if (setUsersRolesResponse.Status != UserRoleUpdateStatus.Success)
-                    {
-                        log.LogWarning("UserService.SetUsersRoles return status:{0}", setUsersRolesResponse.Status);
-                        return new RegisterCompanyResponse { Status = RegisterCompanyStatus.UnknownError };
-                    }
-                    var isSetCompanyAccount = SetCompanyAccount(companyId, request.AccountName);
-                    if (!isSetCompanyAccount)
-                    {
-                        log.LogWarning("Cannot set SetCompanyAccount");
-                        return new RegisterCompanyResponse { Status = RegisterCompanyStatus.UnknownError };
-                    }
-                    tranScope.Complete();
+                    log.LogWarning("CodeFirstMembershipProvider.CreateUser return status:{0}", status);
                     return new RegisterCompanyResponse { Status = status };
                 }
+
+                var (companyId, structureUnitId) = structureUnitService.GetCompanyIdByName(model.CompanyName);
+                var userId = user.Id;
+                var setUsersRolesRequest = new SetUsersRolesRequest
+                {
+                    UserId = userId,
+                    Roles = new[] {
+                            new RoleData() { RoleId = customRoleManager.Roles.Single(r=>r.Name== "Admin").Id,  IsInRole = true },
+                            new RoleData() { RoleId = customRoleManager.Roles.Single(r => r.Name == "User").Id, IsInRole = true } },
+                    StructureUnitId = structureUnitId
+                };
+                var setUsersRolesResponse = await userService.SetUsersRolesAsync(setUsersRolesRequest);
+
+                if (setUsersRolesResponse.Status != UserRoleUpdateStatus.Success)
+                {
+                    log.LogWarning("UserService.SetUsersRoles return status:{0}", setUsersRolesResponse.Status);
+                    return new RegisterCompanyResponse { Status = RegisterCompanyStatus.UnknownError };
+                }
+                var isSetCompanyAccount = SetCompanyAccount(companyId, request.AccountName);
+                if (!isSetCompanyAccount)
+                {
+                    log.LogWarning("Cannot set SetCompanyAccount");
+                    return new RegisterCompanyResponse { Status = RegisterCompanyStatus.UnknownError };
+                }
+                tranScope.Complete();
+                return new RegisterCompanyResponse { Status = status };
             }
             catch (Exception e)
             {
@@ -118,37 +116,35 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             Guid userId;
             try
             {
-                using (var tranScope = new System.Transactions.TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+                using var tranScope = new System.Transactions.TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+                var (user, registerCompanyStatus) = await CreateUserAsync(model.UserName,
+                    model.Password,
+                    model.Email,
+                    request.StructureUnitId,
+                    model.FirstName,
+                    model.LastName);
+                if (registerCompanyStatus != RegisterCompanyStatus.Success)
                 {
-                    var (user, registerCompanyStatus) = await CreateUserAsync(model.UserName,
-                        model.Password,
-                        model.Email,
-                        request.StructureUnitId,
-                        model.FirstName,
-                        model.LastName);
-                    if (registerCompanyStatus != RegisterCompanyStatus.Success)
-                    {
-                        log.LogWarning("CodeFirstMembershipProvider.CreateUser return status:{0}", registerCompanyStatus);
-                        return new CreateUserResponse { Status = (CreateUserStatus)registerCompanyStatus };
-                    }
-
-                    userId = user.Id;
-
-                    var setUsersRolesRequest = new SetUsersRolesRequest
-                    {
-                        UserId = userId,
-                        Roles = new[] { new RoleData { RoleId = customRoleManager.Roles.Single(r => r.Name == "User").Id, IsInRole = true } },
-                        StructureUnitId = request.StructureUnitId
-                    };
-                    var setUsersRolesResponse = await userService.SetUsersRolesAsync(setUsersRolesRequest);                   
-                  
-                    if (setUsersRolesResponse.Status != UserRoleUpdateStatus.Success)
-                    {
-                        log.LogWarning("UserService.SetUsersRoles return status:{0}", setUsersRolesResponse.Status);
-                        return new CreateUserResponse { Status = CreateUserStatus.UnknownError };
-                    }
-                    tranScope.Complete();
+                    log.LogWarning("CodeFirstMembershipProvider.CreateUser return status:{0}", registerCompanyStatus);
+                    return new CreateUserResponse { Status = (CreateUserStatus)registerCompanyStatus };
                 }
+
+                userId = user.Id;
+
+                var setUsersRolesRequest = new SetUsersRolesRequest
+                {
+                    UserId = userId,
+                    Roles = new[] { new RoleData { RoleId = customRoleManager.Roles.Single(r => r.Name == "User").Id, IsInRole = true } },
+                    StructureUnitId = request.StructureUnitId
+                };
+                var setUsersRolesResponse = await userService.SetUsersRolesAsync(setUsersRolesRequest);
+
+                if (setUsersRolesResponse.Status != UserRoleUpdateStatus.Success)
+                {
+                    log.LogWarning("UserService.SetUsersRoles return status:{0}", setUsersRolesResponse.Status);
+                    return new CreateUserResponse { Status = CreateUserStatus.UnknownError };
+                }
+                tranScope.Complete();
             }
             catch (Exception e)
             {
@@ -220,24 +216,22 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         private bool SetCompanyAccount(int companyId, string accountName)
         {
             var dbContext = dbFactory.Create();
-            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
+            using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
+            var company = unitOfWork.StructureUnitRepository.GetById(companyId);
+            if (company == null || company.UnitType != UnitType.Company)
             {
-                var company = unitOfWork.StructureUnitRepository.GetById(companyId);
-                if (company == null || company.UnitType != UnitType.Company)
-                {
-                    return false;
-                }
-                var account =
-                    unitOfWork.AccountRepository.GetAll().SingleOrDefault(a => a.Name == accountName && a.IsAvailable);
-                if (account == null)
-                {
-                    return false;
-                }
-                company.Account = account;
-                unitOfWork.StructureUnitRepository.Update(company, company.Id);
-                unitOfWork.StructureUnitRepository.SaveChanges();
-                return true;
+                return false;
             }
+            var account =
+                unitOfWork.AccountRepository.GetAll().SingleOrDefault(a => a.Name == accountName && a.IsAvailable);
+            if (account == null)
+            {
+                return false;
+            }
+            company.Account = account;
+            unitOfWork.StructureUnitRepository.Update(company, company.Id);
+            unitOfWork.StructureUnitRepository.SaveChanges();
+            return true;
         }
 
         public async Task<ValidateUserResponse> ValidateUser(ValidateUserRequest request)

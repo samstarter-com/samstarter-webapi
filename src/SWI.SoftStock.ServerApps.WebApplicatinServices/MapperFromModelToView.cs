@@ -12,14 +12,16 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
     {
         public static T MapToSoftwareModel<T>(Software software) where T : class, ISimpleSoftwareModel, new()
         {
-            var result = new T();
-            result.SoftwareId = software.UniqueId;
-            result.Name = software.Name;
-            result.PublisherName = software.Publisher != null ? software.Publisher.Name : string.Empty;
-            result.Version = software.Version;
-            result.SystemComponent = software.SystemComponent;
-            result.WindowsInstaller = software.WindowsInstaller;
-            result.ReleaseType = software.ReleaseType;
+            var result = new T
+            {
+                SoftwareId = software.UniqueId,
+                Name = software.Name,
+                PublisherName = software.Publisher != null ? software.Publisher.Name : string.Empty,
+                Version = software.Version,
+                SystemComponent = software.SystemComponent,
+                WindowsInstaller = software.WindowsInstaller,
+                ReleaseType = software.ReleaseType
+            };
             return result;
         }
 
@@ -64,19 +66,23 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public static DocumentModel MapToDocumentModel(Document document)
         {
-            var result = new DocumentModel();
-            result.Id = document.UniqueId;
-            result.Name = document.Name;
-            result.HcLocation = document.HcLocation;
+            var result = new DocumentModel
+            {
+                Id = document.UniqueId,
+                Name = document.Name,
+                HcLocation = document.HcLocation
+            };
             return result;
         }
 
         public static LicenseRequestDocumentModel MapToLicenseRequestDocumentModel(LicenseRequestDocument document)
         {
-            var result = new LicenseRequestDocumentModel();
-            result.Id = document.UniqueId;
-            result.Name = document.Name;
-            result.HcLocation = document.HcLocation;
+            var result = new LicenseRequestDocumentModel
+            {
+                Id = document.UniqueId,
+                Name = document.Name,
+                HcLocation = document.HcLocation
+            };
             return result;
         }
 
@@ -95,20 +101,24 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public static AlertModel MapToLicenseAlertModel(LicenseAlert alert)
         {
-            var result = new AlertModel();
-            result.AlertDateTime = alert.AlertDate;
-            result.AlertText = alert.Text;
-            result.AlertUsers = alert.Assignees.Select(a => MapToUserModel(a.User, a.User.StructureUnitRoles.Single(sur => sur.Role.Name == "User").StructureUnit)).ToArray();
+            var result = new AlertModel
+            {
+                AlertDateTime = alert.AlertDate,
+                AlertText = alert.Text,
+                AlertUsers = alert.Assignees.Select(a => MapToUserModel(a.User, a.User.StructureUnitRoles.Single(sur => sur.Role.Name == "User").StructureUnit)).ToArray()
+            };
             return result;
         }
 
         public static AlertModelEx MapToLicenseAlertModelEx(LicenseAlert alert)
         {
-            var result = new AlertModelEx();
-            result.Id = alert.UniqueId;
-            result.AlertDateTime = alert.AlertDate;
-            result.AlertText = alert.Text;
-            result.AlertUsers = alert.Assignees.Select(a => MapToUserModel(a.User, a.User.StructureUnitRoles.Single(sur => sur.Role.Name == "User").StructureUnit)).ToArray();
+            var result = new AlertModelEx
+            {
+                Id = alert.UniqueId,
+                AlertDateTime = alert.AlertDate,
+                AlertText = alert.Text,
+                AlertUsers = alert.Assignees.Select(a => MapToUserModel(a.User, a.User.StructureUnitRoles.Single(sur => sur.Role.Name == "User").StructureUnit)).ToArray()
+            };
             return result;
         }
 
@@ -143,78 +153,88 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public static T MapToLicenseModel<T>(License license) where T : class, ILicenseModel, new()
         {
-            var result = new T();
-            result.LicenseId = license.UniqueId;
-            result.Name = license.Name;
-            result.LicenseTypeName = license.LicenseType.Name;
-            result.LinkedSoftwares = license.LicenseSoftwares.Select(ls => MapToSoftwareModel<SoftwareModel>(ls.Software)).ToArray();
-            result.BeginDate = license.BeginDate;
-            result.ExpirationDate = license.ExpirationDate;
-            result.Count = license.Count;
-            result.AvailableCount = license.Count -
+            var result = new T
+            {
+                LicenseId = license.UniqueId,
+                Name = license.Name,
+                LicenseTypeName = license.LicenseType.Name,
+                LinkedSoftwares = license.LicenseSoftwares.Select(ls => MapToSoftwareModel<SoftwareModel>(ls.Software)).ToArray(),
+                BeginDate = license.BeginDate,
+                ExpirationDate = license.ExpirationDate,
+                Count = license.Count,
+                AvailableCount = license.Count -
                                     license.LicenseSoftwares.SelectMany(
                                         ls => ls.LicenseMachineSoftwares.Where(lms => !lms.IsDeleted)).Select(
-                                            lms => lms.MachineSoftware.MachineId).Distinct().Count();
-            result.Comments = license.Comments;
-            result.Documents = license.Documents.Select(MapToDocumentModel).ToArray();
-            result.Alerts = license.LicenseAlerts.Select(MapToLicenseAlertModel).ToArray();
-            result.StructureUnitName = license.StructureUnit.ShortName;
-            result.StructureUnitId = license.StructureUnit.UniqueId;
+                                            lms => lms.MachineSoftware.MachineId).Distinct().Count(),
+                Comments = license.Comments,
+                Documents = license.Documents.Select(MapToDocumentModel).ToArray(),
+                Alerts = license.LicenseAlerts.Select(MapToLicenseAlertModel).ToArray(),
+                StructureUnitName = license.StructureUnit.ShortName,
+                StructureUnitId = license.StructureUnit.UniqueId
+            };
             return result;
         }
 
         public static DropDownItemModel MapToLicenseTypeModel(LicenseType licenseType)
         {
-            var result = new DropDownItemModel();
-            result.Id = licenseType.Id;
-            result.Name = licenseType.Name;
+            var result = new DropDownItemModel
+            {
+                Id = licenseType.Id,
+                Name = licenseType.Name
+            };
             return result;
         }
 
         public static LicenseModelEx MapToLicenseModelEx(License license)
         {
-            var result = new LicenseModelEx();
-            result.LicenseId = license.UniqueId;
-            result.Name = license.Name;
-            result.LicenseTypeId = license.LicenseTypeId;
-            result.BeginDate = license.BeginDate;
-            result.ExpirationDate = license.ExpirationDate;
-            result.Comments = license.Comments;
-            result.Count = license.Count;
-            result.LinkedSoftwares = license.LicenseSoftwares.Select(ls => MapToSoftwareModel<SoftwareModel>(ls.Software)).ToArray();
-            result.Documents = license.Documents.Select(d => MapToDocumentModelEx(d, false)).ToArray();
-            result.Alerts = license.LicenseAlerts.Select(MapToLicenseAlertModelEx).ToArray();
-            result.StructureUnitId = license.StructureUnit.UniqueId;
+            var result = new LicenseModelEx
+            {
+                LicenseId = license.UniqueId,
+                Name = license.Name,
+                LicenseTypeId = license.LicenseTypeId,
+                BeginDate = license.BeginDate,
+                ExpirationDate = license.ExpirationDate,
+                Comments = license.Comments,
+                Count = license.Count,
+                LinkedSoftwares = license.LicenseSoftwares.Select(ls => MapToSoftwareModel<SoftwareModel>(ls.Software)).ToArray(),
+                Documents = license.Documents.Select(d => MapToDocumentModelEx(d, false)).ToArray(),
+                Alerts = license.LicenseAlerts.Select(MapToLicenseAlertModelEx).ToArray(),
+                StructureUnitId = license.StructureUnit.UniqueId
+            };
             return result;
         }
 
         public static ShortLicenseModel MapToShortLicenseModel(License license)
         {
-            var result = new ShortLicenseModel();
-            result.LicenseId = license.UniqueId;
-            result.Name = license.Name;
+            var result = new ShortLicenseModel
+            {
+                LicenseId = license.UniqueId,
+                Name = license.Name
+            };
             return result;
         }
         
         public static T MapToMachineModel<T>(Machine machine) where T : class, IMachineModel, new()
         {
-            var result = new T();
-            result.UserId = machine.CurrentUserId;
-            result.MachineId = machine.UniqueId;
-            result.OperationSystemName = machine.MachineOperationSystem?.OperationSystem?.Name;
-            result.LinkedUserName = machine.CurrentUser?.UserName;
-            result.DomainUserDomainName = machine.CurrentDomainUser?.DomainName;
-            result.DomainUserName = machine.CurrentDomainUser?.Name;
-            result.Name = machine.Name;
-            result.Enabled = !machine.IsDisabled;
-            result.CreatedOn = machine.CreatedOn;
-            result.LastActivity = machine.LastActivityDateTime;
-            result.StructureUnitId = machine.CurrentLinkedStructureUnit?.UniqueId;
-            result.StructureUnitName = machine.CurrentLinkedStructureUnit != null ? machine.CurrentLinkedStructureUnit.ShortName : string.Empty;
-            result.TotalSoftwareCount = machine.MachineSoftwaresReadOnly.SoftwaresTotalCount;
-            result.LicensedSoftwareCount = machine.MachineSoftwaresReadOnly.SoftwaresIsActiveCount;
-            result.UnLicensedSoftwareCount = machine.MachineSoftwaresReadOnly.SoftwaresUnlicensedCount;
-            result.ExpiredLicensedSoftwareCount = machine.MachineSoftwaresReadOnly.SoftwaresIsExpiredCount;
+            var result = new T
+            {
+                UserId = machine.CurrentUserId,
+                MachineId = machine.UniqueId,
+                OperationSystemName = machine.MachineOperationSystem?.OperationSystem?.Name,
+                LinkedUserName = machine.CurrentUser?.UserName,
+                DomainUserDomainName = machine.CurrentDomainUser?.DomainName,
+                DomainUserName = machine.CurrentDomainUser?.Name,
+                Name = machine.Name,
+                Enabled = !machine.IsDisabled,
+                CreatedOn = machine.CreatedOn,
+                LastActivity = machine.LastActivityDateTime,
+                StructureUnitId = machine.CurrentLinkedStructureUnit?.UniqueId,
+                StructureUnitName = machine.CurrentLinkedStructureUnit != null ? machine.CurrentLinkedStructureUnit.ShortName : string.Empty,
+                TotalSoftwareCount = machine.MachineSoftwaresReadOnly.SoftwaresTotalCount,
+                LicensedSoftwareCount = machine.MachineSoftwaresReadOnly.SoftwaresIsActiveCount,
+                UnLicensedSoftwareCount = machine.MachineSoftwaresReadOnly.SoftwaresUnlicensedCount,
+                ExpiredLicensedSoftwareCount = machine.MachineSoftwaresReadOnly.SoftwaresIsExpiredCount
+            };
             return result;
         }
 
@@ -231,50 +251,56 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public static MachineModelEx MapToMachineModelEx(Machine machine)
         {
-            var result = new MachineModelEx();
-            result.UserId = machine.CurrentUser?.Id;
-            result.UserName = machine.CurrentUser != null ? machine.CurrentUser.UserName : string.Empty;
-            result.MachineId = machine.UniqueId;
-            result.DomainUserDomainName = machine.CurrentDomainUser?.DomainName;
-            result.DomainUserName = machine.CurrentDomainUser != null ? machine.CurrentDomainUser.Name : null;
-            result.MemoryTotalCapacity = machine.MemoryTotalCapacity;
-            result.MonitorCount = machine.MonitorCount;
-            result.Name = machine.Name;
-            result.StructureUnitId = machine.CurrentLinkedStructureUnit != null ? (Guid?)machine.CurrentLinkedStructureUnit.UniqueId : null;
-            result.StructureUnitName = machine.CurrentLinkedStructureUnit != null ? machine.CurrentLinkedStructureUnit.ShortName : string.Empty;
-            result.TotalSoftwareCount = machine.MachineSoftwaresReadOnly.SoftwaresTotalCount;
-            result.LicensedSoftwareCount = machine.MachineSoftwaresReadOnly.SoftwaresIsActiveCount;
-            result.UnLicensedSoftwareCount = machine.MachineSoftwaresReadOnly.SoftwaresUnlicensedCount;
-            result.ExpiredLicensedSoftwareCount = machine.MachineSoftwaresReadOnly.SoftwaresIsExpiredCount;
-            result.CreatedOn = machine.CreatedOn;
-            result.ModifiedOn = machine.ModifiedOn;
-            result.LastActivity = machine.LastActivityDateTime;
-            result.NetworkAdapters = machine.NetworkAdapters.Select(MapToNetworkAdapterModel);
-            result.ObservableProcesses = machine.MachineObservedProcesses.Select(mop => mop.Observable).Select(MapToObservableModel);
-            result.Processor = machine.Processor != null ? MapToProcessorModel(machine.Processor) : null;
-            result.OperationSystem = machine.MachineOperationSystem != null
+            var result = new MachineModelEx
+            {
+                UserId = machine.CurrentUser?.Id,
+                UserName = machine.CurrentUser != null ? machine.CurrentUser.UserName : string.Empty,
+                MachineId = machine.UniqueId,
+                DomainUserDomainName = machine.CurrentDomainUser?.DomainName,
+                DomainUserName = machine.CurrentDomainUser != null ? machine.CurrentDomainUser.Name : null,
+                MemoryTotalCapacity = machine.MemoryTotalCapacity,
+                MonitorCount = machine.MonitorCount,
+                Name = machine.Name,
+                StructureUnitId = machine.CurrentLinkedStructureUnit != null ? (Guid?)machine.CurrentLinkedStructureUnit.UniqueId : null,
+                StructureUnitName = machine.CurrentLinkedStructureUnit != null ? machine.CurrentLinkedStructureUnit.ShortName : string.Empty,
+                TotalSoftwareCount = machine.MachineSoftwaresReadOnly.SoftwaresTotalCount,
+                LicensedSoftwareCount = machine.MachineSoftwaresReadOnly.SoftwaresIsActiveCount,
+                UnLicensedSoftwareCount = machine.MachineSoftwaresReadOnly.SoftwaresUnlicensedCount,
+                ExpiredLicensedSoftwareCount = machine.MachineSoftwaresReadOnly.SoftwaresIsExpiredCount,
+                CreatedOn = machine.CreatedOn,
+                ModifiedOn = machine.ModifiedOn,
+                LastActivity = machine.LastActivityDateTime,
+                NetworkAdapters = machine.NetworkAdapters.Select(MapToNetworkAdapterModel),
+                ObservableProcesses = machine.MachineObservedProcesses.Select(mop => mop.Observable).Select(MapToObservableModel),
+                Processor = machine.Processor != null ? MapToProcessorModel(machine.Processor) : null,
+                OperationSystem = machine.MachineOperationSystem != null
                 ? MapToOperationSystemModel(machine.MachineOperationSystem)
-                : null;
-            result.Enabled = !machine.IsDisabled;
+                : null,
+                Enabled = !machine.IsDisabled
+            };
             return result;
         }
 
         public static NetworkAdapterModel MapToNetworkAdapterModel(NetworkAdapter networkAdapter)
         {
-            var result = new NetworkAdapterModel();
-            result.MacAdress = networkAdapter.MacAdress;
-            result.Caption = networkAdapter.Caption;
+            var result = new NetworkAdapterModel
+            {
+                MacAdress = networkAdapter.MacAdress,
+                Caption = networkAdapter.Caption
+            };
             return result;
         }
 
         public static ProcessorModel MapToProcessorModel(Processor processor)
         {
-            var result = new ProcessorModel();
-            result.ProcessorId = processor.ProcessorId;
-            result.DeviceId = processor.DeviceID;
-            result.SocketDesignation = processor.SocketDesignation;
-            result.Is64BitProcess = processor.Is64BitProcess;
-            result.ManufacturerName = processor.Manufacturer.Name;
+            var result = new ProcessorModel
+            {
+                ProcessorId = processor.ProcessorId,
+                DeviceId = processor.DeviceID,
+                SocketDesignation = processor.SocketDesignation,
+                Is64BitProcess = processor.Is64BitProcess,
+                ManufacturerName = processor.Manufacturer.Name
+            };
             return result;
         }
 
@@ -297,23 +323,25 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public static LicenseRequestModel MapToManagerLicenseRequestModel(LicenseRequest licenseRequest)
         {
-            var result = new LicenseRequestModel();
-            result.LicenseRequestId = licenseRequest.UniqueId;
-            result.MachineId = licenseRequest.Machine.UniqueId;
-            result.MachineName = licenseRequest.Machine.Name;
-            result.SoftwareId = licenseRequest.Software.UniqueId;
-            result.SoftwareName = licenseRequest.Software.Name;
-            result.SoftwarePublisher = licenseRequest.Software.Publisher != null ? licenseRequest.Software.Publisher.Name : string.Empty;
-            result.Text = licenseRequest.RequestText;
-            result.UserEmail = licenseRequest.UserEmail;
-            result.UserId = licenseRequest.UserUserId;
-            result.UserName = licenseRequest.User.UserName;
-            result.CreatedOn = licenseRequest.LicenseRequestHistories.Min(lrh => lrh.StatusDateTime);
-            result.ModifiedOn = licenseRequest.LicenseRequestHistories.Max(lrh => lrh.StatusDateTime);
-            result.Status = GetLicenseRequestManagerStatusEn(GetManagerLicenseRequestStatus(licenseRequest.CurrentStatus));
-            result.Permission = GetManagerLicenseRequestPermission(licenseRequest.CurrentStatus);
-            result.Documents = licenseRequest.LicenseRequestDocuments.Select(MapToLicenseRequestDocumentModel).ToArray();
-            result.UserAnswerText = licenseRequest.UserAnswerText;
+            var result = new LicenseRequestModel
+            {
+                LicenseRequestId = licenseRequest.UniqueId,
+                MachineId = licenseRequest.Machine.UniqueId,
+                MachineName = licenseRequest.Machine.Name,
+                SoftwareId = licenseRequest.Software.UniqueId,
+                SoftwareName = licenseRequest.Software.Name,
+                SoftwarePublisher = licenseRequest.Software.Publisher != null ? licenseRequest.Software.Publisher.Name : string.Empty,
+                Text = licenseRequest.RequestText,
+                UserEmail = licenseRequest.UserEmail,
+                UserId = licenseRequest.UserUserId,
+                UserName = licenseRequest.User.UserName,
+                CreatedOn = licenseRequest.LicenseRequestHistories.Min(lrh => lrh.StatusDateTime),
+                ModifiedOn = licenseRequest.LicenseRequestHistories.Max(lrh => lrh.StatusDateTime),
+                Status = GetLicenseRequestManagerStatusEn(GetManagerLicenseRequestStatus(licenseRequest.CurrentStatus)),
+                Permission = GetManagerLicenseRequestPermission(licenseRequest.CurrentStatus),
+                Documents = licenseRequest.LicenseRequestDocuments.Select(MapToLicenseRequestDocumentModel).ToArray(),
+                UserAnswerText = licenseRequest.UserAnswerText
+            };
             return result;
         }
 
@@ -346,25 +374,14 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public static LicenseRequestPermission GetManagerLicenseRequestPermission(LicenseRequestStatus currentStatus)
         {
-            LicenseRequestPermission result;
-            switch (currentStatus)
+            var result = currentStatus switch
             {
-                case LicenseRequestStatus.New:
-                    result = LicenseRequestPermission.Update | LicenseRequestPermission.MoveToArchive;
-                    break;
-                case LicenseRequestStatus.SentToManager:
-                    result = LicenseRequestPermission.CreateLicense | LicenseRequestPermission.MoveToArchive;
-                    break;
-                case LicenseRequestStatus.ViewedByManager:
-                    result = LicenseRequestPermission.CreateLicense | LicenseRequestPermission.MoveToArchive;
-                    break;
-                case LicenseRequestStatus.Closed:
-                    result = LicenseRequestPermission.MoveToArchive;
-                    break;
-                default:
-                    result = LicenseRequestPermission.None;
-                    break;
-            }
+                LicenseRequestStatus.New => LicenseRequestPermission.Update | LicenseRequestPermission.MoveToArchive,
+                LicenseRequestStatus.SentToManager => LicenseRequestPermission.CreateLicense | LicenseRequestPermission.MoveToArchive,
+                LicenseRequestStatus.ViewedByManager => LicenseRequestPermission.CreateLicense | LicenseRequestPermission.MoveToArchive,
+                LicenseRequestStatus.Closed => LicenseRequestPermission.MoveToArchive,
+                _ => LicenseRequestPermission.None,
+            };
             if (LicenseRequestStatusesViewedByManager().Contains(currentStatus))
             {
                 result = result | LicenseRequestPermission.View;
@@ -376,19 +393,12 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public static LicenseRequestPermission GetPersonLicenseRequestPermission(LicenseRequestStatus currentStatus)
         {
-            LicenseRequestPermission result;
-            switch (currentStatus)
+            var result = currentStatus switch
             {
-                case LicenseRequestStatus.SentToUser:
-                    result = LicenseRequestPermission.CreateAnswer;
-                    break;
-                case LicenseRequestStatus.ViewedByUser:
-                    result = LicenseRequestPermission.CreateAnswer;
-                    break;
-                default:
-                    result = LicenseRequestPermission.None;
-                    break;
-            }
+                LicenseRequestStatus.SentToUser => LicenseRequestPermission.CreateAnswer,
+                LicenseRequestStatus.ViewedByUser => LicenseRequestPermission.CreateAnswer,
+                _ => LicenseRequestPermission.None,
+            };
             if (LicenseRequestStatusesViewedByPerson().Contains(currentStatus))
             {
                 result = result | LicenseRequestPermission.View;
@@ -398,164 +408,153 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public static ManagerLicenseRequestStatus GetManagerLicenseRequestStatus(LicenseRequestStatus currentStatus)
         {
-            switch (currentStatus)
+            return currentStatus switch
             {
-                case LicenseRequestStatus.New:
-                    return ManagerLicenseRequestStatus.New;
-                case LicenseRequestStatus.SentToUser:
-                    return ManagerLicenseRequestStatus.AwaitingResponse;
-                case LicenseRequestStatus.ViewedByUser:
-                    return ManagerLicenseRequestStatus.AwaitingResponse;
-                case LicenseRequestStatus.SentToManager:
-                    return ManagerLicenseRequestStatus.SentToManager;
-                case LicenseRequestStatus.ViewedByManager:
-                    return ManagerLicenseRequestStatus.ViewedByManager;
-                case LicenseRequestStatus.Closed:
-                    return ManagerLicenseRequestStatus.Closed;
-                case LicenseRequestStatus.Archived:
-                    return ManagerLicenseRequestStatus.Archived;
-                default:
-                    throw new NotImplementedException();    
-            }
+                LicenseRequestStatus.New => ManagerLicenseRequestStatus.New,
+                LicenseRequestStatus.SentToUser => ManagerLicenseRequestStatus.AwaitingResponse,
+                LicenseRequestStatus.ViewedByUser => ManagerLicenseRequestStatus.AwaitingResponse,
+                LicenseRequestStatus.SentToManager => ManagerLicenseRequestStatus.SentToManager,
+                LicenseRequestStatus.ViewedByManager => ManagerLicenseRequestStatus.ViewedByManager,
+                LicenseRequestStatus.Closed => ManagerLicenseRequestStatus.Closed,
+                LicenseRequestStatus.Archived => ManagerLicenseRequestStatus.Archived,
+                _ => throw new NotImplementedException(),
+            };
         }
 
         public static PersonalLicenseRequestStatus GetPersonalLicenseRequestStatus(LicenseRequestStatus currentStatus)
         {
-            switch (currentStatus)
+            return currentStatus switch
             {
-                case LicenseRequestStatus.SentToUser:
-                    return PersonalLicenseRequestStatus.New;
-                case LicenseRequestStatus.ViewedByUser:
-                    return PersonalLicenseRequestStatus.ViewedByUser;
-                case LicenseRequestStatus.SentToManager:
-                    return PersonalLicenseRequestStatus.Answered;
-                case LicenseRequestStatus.ViewedByManager:
-                    return PersonalLicenseRequestStatus.Answered;
-                case LicenseRequestStatus.Closed:
-                    return PersonalLicenseRequestStatus.Answered;
-                default:
-                    throw new NotImplementedException();
-            }
+                LicenseRequestStatus.SentToUser => PersonalLicenseRequestStatus.New,
+                LicenseRequestStatus.ViewedByUser => PersonalLicenseRequestStatus.ViewedByUser,
+                LicenseRequestStatus.SentToManager => PersonalLicenseRequestStatus.Answered,
+                LicenseRequestStatus.ViewedByManager => PersonalLicenseRequestStatus.Answered,
+                LicenseRequestStatus.Closed => PersonalLicenseRequestStatus.Answered,
+                _ => throw new NotImplementedException(),
+            };
         }
 
         public static string GetLicenseRequestManagerStatusEn(ManagerLicenseRequestStatus currentStatus)
         {
-            switch (currentStatus)
+            return currentStatus switch
             {
-                case ManagerLicenseRequestStatus.New:
-                    return "Draft";
-                case ManagerLicenseRequestStatus.AwaitingResponse:
-                    return "Awaiting response";
-                case ManagerLicenseRequestStatus.SentToManager:
-                    return "New received";
-                case ManagerLicenseRequestStatus.ViewedByManager:
-                    return "Received";
-                case ManagerLicenseRequestStatus.Closed:
-                    return "Closed";
-                case ManagerLicenseRequestStatus.Archived:
-                    return "Archived";
-                default:
-                    throw new NotImplementedException();
-            }
+                ManagerLicenseRequestStatus.New => "Draft",
+                ManagerLicenseRequestStatus.AwaitingResponse => "Awaiting response",
+                ManagerLicenseRequestStatus.SentToManager => "New received",
+                ManagerLicenseRequestStatus.ViewedByManager => "Received",
+                ManagerLicenseRequestStatus.Closed => "Closed",
+                ManagerLicenseRequestStatus.Archived => "Archived",
+                _ => throw new NotImplementedException(),
+            };
         }
 
         public static string GetLicenseRequestUserStatusEn(PersonalLicenseRequestStatus currentStatus)
         {
-            switch (currentStatus)
+            return currentStatus switch
             {
-                case PersonalLicenseRequestStatus.New:
-                    return "New received";
-                case PersonalLicenseRequestStatus.ViewedByUser:
-                    return "Received";
-                case PersonalLicenseRequestStatus.Answered:
-                    return "Answered";
-                default:
-                    throw new NotImplementedException();
-            }
+                PersonalLicenseRequestStatus.New => "New received",
+                PersonalLicenseRequestStatus.ViewedByUser => "Received",
+                PersonalLicenseRequestStatus.Answered => "Answered",
+                _ => throw new NotImplementedException(),
+            };
         }
 
         public static PersonalMachineModel MapToPersonalMachineModel(Machine machine)
         {
-            var result = new PersonalMachineModel();
-            result.MachineId = machine.UniqueId;
-            result.Name = machine.Name;
-            result.TotalSoftwareCount = machine.MachineSoftwaresReadOnly.SoftwaresTotalCount;
-            result.LicensedSoftwareCount = machine.MachineSoftwaresReadOnly.SoftwaresIsActiveCount;
-            result.UnLicensedSoftwareCount = machine.MachineSoftwaresReadOnly.SoftwaresUnlicensedCount;
-            result.ExpiredLicensedSoftwareCount = machine.MachineSoftwaresReadOnly.SoftwaresIsExpiredCount;
+            var result = new PersonalMachineModel
+            {
+                MachineId = machine.UniqueId,
+                Name = machine.Name,
+                TotalSoftwareCount = machine.MachineSoftwaresReadOnly.SoftwaresTotalCount,
+                LicensedSoftwareCount = machine.MachineSoftwaresReadOnly.SoftwaresIsActiveCount,
+                UnLicensedSoftwareCount = machine.MachineSoftwaresReadOnly.SoftwaresUnlicensedCount,
+                ExpiredLicensedSoftwareCount = machine.MachineSoftwaresReadOnly.SoftwaresIsExpiredCount
+            };
             return result;
         }
 
 
         public static PersonalLicenseRequestModel MapToPersonalLicenseRequestModel(LicenseRequest licenseRequest)
         {
-            var result = new PersonalLicenseRequestModel();
-            result.LicenseRequestId = licenseRequest.UniqueId;
-            result.MachineId = licenseRequest.Machine.UniqueId;
-            result.MachineName = licenseRequest.Machine.Name;
-            result.SoftwareId = licenseRequest.Software.UniqueId;
-            result.SoftwareName = licenseRequest.Software.Name;
-            result.SoftwarePublisher = licenseRequest.Software.Publisher != null ? licenseRequest.Software.Publisher.Name : string.Empty;
-            result.Text = licenseRequest.RequestText;
-            result.UserEmail = licenseRequest.UserEmail;
-            result.UserId = licenseRequest.UserUserId;
-            result.UserName = licenseRequest.User.UserName;
-            result.CreatedOn = licenseRequest.LicenseRequestHistories.Min(lrh => lrh.StatusDateTime);
-            result.ModifiedOn = licenseRequest.LicenseRequestHistories.Max(lrh => lrh.StatusDateTime);
-            result.Status = GetLicenseRequestUserStatusEn(GetPersonalLicenseRequestStatus(licenseRequest.CurrentStatus));
-            result.Permission = GetPersonLicenseRequestPermission(licenseRequest.CurrentStatus);
-            result.AnswerText = licenseRequest.UserAnswerText;
-            result.Documents = licenseRequest.LicenseRequestDocuments.Select(MapToPersonalDocumentModel).ToArray();
+            var result = new PersonalLicenseRequestModel
+            {
+                LicenseRequestId = licenseRequest.UniqueId,
+                MachineId = licenseRequest.Machine.UniqueId,
+                MachineName = licenseRequest.Machine.Name,
+                SoftwareId = licenseRequest.Software.UniqueId,
+                SoftwareName = licenseRequest.Software.Name,
+                SoftwarePublisher = licenseRequest.Software.Publisher != null ? licenseRequest.Software.Publisher.Name : string.Empty,
+                Text = licenseRequest.RequestText,
+                UserEmail = licenseRequest.UserEmail,
+                UserId = licenseRequest.UserUserId,
+                UserName = licenseRequest.User.UserName,
+                CreatedOn = licenseRequest.LicenseRequestHistories.Min(lrh => lrh.StatusDateTime),
+                ModifiedOn = licenseRequest.LicenseRequestHistories.Max(lrh => lrh.StatusDateTime),
+                Status = GetLicenseRequestUserStatusEn(GetPersonalLicenseRequestStatus(licenseRequest.CurrentStatus)),
+                Permission = GetPersonLicenseRequestPermission(licenseRequest.CurrentStatus),
+                AnswerText = licenseRequest.UserAnswerText,
+                Documents = licenseRequest.LicenseRequestDocuments.Select(MapToPersonalDocumentModel).ToArray()
+            };
             return result;
         }
 
         private static PersonalDocumentModel MapToPersonalDocumentModel(LicenseRequestDocument document)
         {
-            var result = new PersonalDocumentModel();
-            result.Id = document.UniqueId;
-            result.Name = document.Name;
+            var result = new PersonalDocumentModel
+            {
+                Id = document.UniqueId,
+                Name = document.Name
+            };
             return result;
         }
 
         public static LicenseRequestDocumentModelEx MapToLicenseRequestDocumentModelEx(LicenseRequestDocument document)
         {
-            var result = new LicenseRequestDocumentModelEx();
-            result.Content = document.Content;
-            result.Id = document.UniqueId;
-            result.Name = document.Name;
+            var result = new LicenseRequestDocumentModelEx
+            {
+                Content = document.Content,
+                Id = document.UniqueId,
+                Name = document.Name
+            };
             return result;
         }
 
         public static PersonalLicenseRequestDocumentModelEx MapToPersonalLicenseRequestDocumentModelEx(LicenseRequestDocument document)
         {
-            var result = new PersonalLicenseRequestDocumentModelEx();
-            result.Content = document.Content;
-            result.Id = document.UniqueId;
-            result.Name = document.Name;
+            var result = new PersonalLicenseRequestDocumentModelEx
+            {
+                Content = document.Content,
+                Id = document.UniqueId,
+                Name = document.Name
+            };
             return result;
         }
 
         public static ObservableModelEx MapToObservableModelEx(Observable observable)
         {
-            var result = new ObservableModelEx();
-            result.ObservableId = observable.UniqueId;
-            result.ProcessName = observable.ProcessName;
-            result.SoftwareId = observable.Software.UniqueId;
-            result.SoftwareName = observable.Software.Name;
-            result.PublisherName = observable.Software.Publisher != null ? observable.Software.Publisher.Name : string.Empty;
-            result.CreatedBy = observable.CreatedByUser.UserName;
-            //todo AppendedMachines -  get only the number of those machines that the user has rights to as a manage
-            result.AppendedMachines = observable.MachineObservedProcesses.Select(mop => mop.Machine).Count();
+            var result = new ObservableModelEx
+            {
+                ObservableId = observable.UniqueId,
+                ProcessName = observable.ProcessName,
+                SoftwareId = observable.Software.UniqueId,
+                SoftwareName = observable.Software.Name,
+                PublisherName = observable.Software.Publisher != null ? observable.Software.Publisher.Name : string.Empty,
+                CreatedBy = observable.CreatedByUser.UserName,
+                //todo AppendedMachines -  get only the number of those machines that the user has rights to as a manage
+                AppendedMachines = observable.MachineObservedProcesses.Select(mop => mop.Machine).Count()
+            };
             return result;
         }
 
         public static ObservableModel MapToObservableModel(Observable observable)
         {
-            var result = new ObservableModel();
-            result.ObservableId = observable.UniqueId;
-            result.ProcessName = observable.ProcessName;
-            result.SoftwareId = observable.Software.UniqueId;
-            result.SoftwareName = observable.Software.Name;
+            var result = new ObservableModel
+            {
+                ObservableId = observable.UniqueId,
+                ProcessName = observable.ProcessName,
+                SoftwareId = observable.Software.UniqueId,
+                SoftwareName = observable.Software.Name
+            };
             return result;
         }
 
@@ -609,17 +608,13 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public static string GetLicensedMachineFilterTypeEn(LicensedMachineFilterType currentStatus)
         {
-            switch (currentStatus)
+            return currentStatus switch
             {
-                case LicensedMachineFilterType.None:
-                    return "Non licensed";
-                case LicensedMachineFilterType.PartialLicensed:
-                    return "Partial licensed";
-                case LicensedMachineFilterType.Licensed:
-                    return "Licensed";
-                default:
-                    throw new NotImplementedException();
-            }
+                LicensedMachineFilterType.None => "Non licensed",
+                LicensedMachineFilterType.PartialLicensed => "Partial licensed",
+                LicensedMachineFilterType.Licensed => "Licensed",
+                _ => throw new NotImplementedException(),
+            };
         }
     }
 }

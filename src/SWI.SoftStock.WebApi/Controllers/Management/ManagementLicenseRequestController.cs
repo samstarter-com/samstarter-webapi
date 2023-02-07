@@ -6,13 +6,14 @@ using SWI.SoftStock.ServerApps.WebApplicationContracts.LicenseRequestService.Get
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using SWI.SoftStock.WebApi.Common;
 
 namespace SWI.SoftStock.WebApi.Controllers.Management
 {
     [ApiController]
     [Authorize(Roles = "User")]
     [Route("api/management/licenserequest")]
-    public class ManagementLicenseRequestController : ControllerBase
+    public class ManagementLicenseRequestController : AuthorizedBaseController
     {
         private readonly ILicenseRequestService licenseRequestService;
 
@@ -27,11 +28,8 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
         [HttpGet]
         [Route("newcount")]
         public async Task<IActionResult> NewLicenseRequestCountAsync()
-        {
-            var claimsIdentity = (ClaimsIdentity)this.User.Identity;
-            var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
-
-            var request = new GetNewLicenseRequestCountRequest { UserId = Guid.Parse(userId) };
+        {          
+            var request = new GetNewLicenseRequestCountRequest { UserId = Guid.Parse(UserId) };
             var result = await this.licenseRequestService.GetNewLicenseRequestCount(request);
             return this.Ok(result.Count);
         }

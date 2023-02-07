@@ -12,7 +12,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Administration
     [ApiController]
     [Authorize(Policy = Constants.PolicyAdministrator)]
     [Route("api/administration")]
-    public class AdministrationController : ControllerBase
+    public class AdministrationController : AuthorizedBaseController
     {
         private readonly ISecurityService securityService;
 
@@ -26,10 +26,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Administration
         [Route("summary")]
         public IActionResult Summary()
         {
-            var claimsIdentity = (ClaimsIdentity)this.User.Identity;
-            var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
-
-            var request = new GetAccountRequest {UserId = Guid.Parse(userId)};
+            var request = new GetAccountRequest {UserId = Guid.Parse(UserId)};
             var account = this.securityService.GetAccount(request);
             var data = new { Details = account.AccountModel };
             return this.Ok(data);

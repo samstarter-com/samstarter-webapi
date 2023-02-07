@@ -19,7 +19,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
     [ApiController]
     [Authorize(Policy = Constants.PolicyManager)]
     [Route("api/management/observables")]
-    public class ObservableController : ControllerBase
+    public class ObservableController : AuthorizedBaseController
     {
         private readonly ILogger<ObservableController> log;
         private readonly IUserService userService;
@@ -37,10 +37,8 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
         [Route("")]
         public IActionResult Observables([FromQuery] PagingModel paging, [FromQuery] OrderingModel ordering,
             [FromQuery] string prname = null, [FromQuery] Guid? fsid = null)
-        {
-            var claimsIdentity = (ClaimsIdentity)this.User.Identity;
-            var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
-            var companyId = this.userService.GetCompanyId(Guid.Parse(userId));
+        {          
+            var companyId = this.userService.GetCompanyId(Guid.Parse(UserId));
             var request = new GetAllRequest
             {
                 CompanyId = companyId,
@@ -164,8 +162,8 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
                     new FailedResponse()
                     { Errors = this.ModelState.Values.SelectMany(v => v.Errors).Select(er => er.ErrorMessage).ToArray() });
             }
-            var claimsIdentity = (ClaimsIdentity)this.User.Identity;
-            var userId = Guid.Parse(claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value);
+         
+            var userId = Guid.Parse(UserId);
             var companyId = this.userService.GetCompanyId(userId);
             Guid? observableId = this.observableService.Add(modelEx, companyId, userId, out var status);
 

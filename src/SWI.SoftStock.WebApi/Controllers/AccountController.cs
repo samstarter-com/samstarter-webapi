@@ -16,13 +16,14 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using SWI.SoftStock.ServerApps.WebApplicationContracts;
 using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegisteredClaimNames;
+using SWI.SoftStock.WebApi.Common;
 
 namespace SWI.SoftStock.WebApi.Controllers
 {
     [ApiController]
     [Authorize]
     [Route("api/account")]
-    public class AccountController : ControllerBase
+    public class AccountController : AuthorizedBaseController
     {
         private readonly ISecurityService securityService;
         private readonly IJwtAuthManager jwtAuthManager;
@@ -44,11 +45,8 @@ namespace SWI.SoftStock.WebApi.Controllers
         {
             if (this.ModelState.IsValid)
             {
-                var claimsIdentity = (ClaimsIdentity)this.User.Identity;
-                var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
-
                 var result =
-                    await this.securityService.ChangePassword(userId, model.OldPassword, model.NewPassword);
+                    await this.securityService.ChangePassword(UserId, model.OldPassword, model.NewPassword);
                 if (result.Success)
                 {
                     return this.Ok();
@@ -186,13 +184,12 @@ namespace SWI.SoftStock.WebApi.Controllers
                 !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256Signature,
                     StringComparison.InvariantCultureIgnoreCase))
                 throw new SecurityTokenException("Invalid token");
-
-            var userId = principal.FindFirst(ClaimTypes.NameIdentifier).Value;
+           
             var userName = principal.FindFirst(ClaimTypes.Name).Value;
 
             var savedRefreshToken =
                 await this.userService.GetRefreshTokenAsync(
-                    Guid.Parse(userId)); //retrieve the refresh token from a data store
+                    Guid.Parse(UserId)); //retrieve the refresh token from a data store
 
             if (savedRefreshToken.TokenString != refreshModel.RefreshToken ||
                 savedRefreshToken.ExpireAt < DateTime.UtcNow)

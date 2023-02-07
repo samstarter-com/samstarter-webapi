@@ -9,16 +9,11 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices.Mappers
     {
         public static string GetErrorMessage(MachineEnableStatus status)
         {
-            string result;
-            switch (status)
+            string result = status switch
             {
-                case MachineEnableStatus.NotExist:
-                    result = "Cannot disable. Machine not exist";
-                    break;
-                default:
-                    result = "Unknown error";
-                    break;
-            }
+                MachineEnableStatus.NotExist => "Cannot disable. Machine not exist",
+                _ => "Unknown error",
+            };
             return result;
         }
     }

@@ -22,8 +22,10 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public async Task<GetByUserIdResponse> GetByUserIdAsync(GetByUserIdRequest request)
         {
-            var response = new GetByUserIdResponse();
-            response.Model = new WebApplicationModel.Collections.PersonalMachineCollection(request.Ordering);
+            var response = new GetByUserIdResponse
+            {
+                Model = new WebApplicationModel.Collections.PersonalMachineCollection(request.Ordering)
+            };
             var dbContext = dbFactory.Create();
             IEnumerable<PersonalMachineModel> items;
             int totalRecords;
