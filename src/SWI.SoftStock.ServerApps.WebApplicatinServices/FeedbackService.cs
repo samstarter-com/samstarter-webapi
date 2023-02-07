@@ -7,7 +7,6 @@ using System;
 
 namespace SWI.SoftStock.ServerApps.WebApplicationServices
 {
-
     public class FeedbackService : IFeedbackService
     {
         #region IFeedbackService Members
