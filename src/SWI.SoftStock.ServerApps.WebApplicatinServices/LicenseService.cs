@@ -549,7 +549,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         public async Task<LicenseAddResponse> AddAsync(LicenseModelEx model)
         {
             var result = new LicenseAddResponse();
-            // todo расширить LicenseCreationStatus: проверки на существование сущностей LinkedSoftwares и др. в model
+            // todo extend LicenseCreationStatus: checks for the existence of LinkedSoftwares entities and others in model
             var dbContext = dbFactory.Create();
             License license;
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
@@ -592,7 +592,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 {
                     return LicenseUpdateStatus.NotExist;
                 }
-                //todo при уменьшение количества лицензий проверять, что не превышено количество уже установленных лицензий
+                //todo when reducing the number of licenses, check that the number of already installed licenses is not exceeded
                 if (!model.Equals(license))
                 {
                     license.Name = model.Name.Trim();
@@ -612,7 +612,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 var removedSoftwareModels =
                     license.LicenseSoftwares.Where(
                         stored => !model.LinkedSoftwares.Any(current => current.SoftwareId == stored.Software.UniqueId)).ToArray();
-                // todo проверить что лицензия не привязана к removedSoftwareModels. Если привязана, то не изменять, а возвращать статус LinkedToRemovedSoftware
+                // todo check that the license is not tied to removedSoftwareModels. If it is linked, then do not change, but return the status of LinkedToRemovedSoftware
 
                 var addedSoftwares =
                     unitOfWork.SoftwareRepository.GetAll().Where(s => addedSoftwareUniqueIds.Contains(s.UniqueId)).ToArray();
@@ -799,7 +799,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 }
                 if (license.StructureUnit != null && license.StructureUnit.UniqueId == structureUnitId)
                 {
-                    // если лицензия уже прикреплена к этому структурному подразделению, то ничего не делаем
+                    // if the license is already attached to this structural unit, then do nothing
                     return LicenseLinkToStructureUnitStatus.Success;
                 }
 

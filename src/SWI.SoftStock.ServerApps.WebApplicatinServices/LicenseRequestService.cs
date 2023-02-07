@@ -531,7 +531,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         private string GetLicenseRequestText(string softwareName, string machineName)
         {
-            // todo текст разместить в хранилище темплейтов (см. темплейт писем и использовать RazorEngine)
+            // todo place the text in the template repository (see email template and use RazorEngine)
             return $"Please, attach license documents for software \"{softwareName}\" installed on \"{machineName}\"";
         }
     }

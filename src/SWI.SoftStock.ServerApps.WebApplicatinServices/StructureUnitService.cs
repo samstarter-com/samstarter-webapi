@@ -100,7 +100,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         }
 
         /// <summary>
-        ///     Создание экземпляра StructureUnit из web-модели
+        ///     Create a StructureUnit instance from a web model
         /// </summary>
         /// <param name="model"></param>
         /// <param name="parentId"></param>
@@ -155,7 +155,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                         if (existingStructureUnit.StructureUnitId.HasValue &&
                             existingStructureUnit.StructureUnitId.Value != newParentStructureUnit.Id)
                         {
-                            //если перемещается в собвственный дочерний узел
+                            // if moved to its own child node
                             var children = newParentStructureUnit.Ancestors(true, su => su.ParentStructureUnit);
                             child = children.SingleOrDefault(p => p.StructureUnitId == existingStructureUnit.Id);
                             if (child != null)
@@ -383,7 +383,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
 
         /// <summary>
-        ///     Проверка уникальности в рамках компании
+        ///     Checking uniqueness within the company
         /// </summary>
         /// <param name="structureUnit"></param>
         /// <returns></returns>

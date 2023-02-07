@@ -59,7 +59,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         }
 
         /// <summary>
-        ///     Получение списка пользователей в роли User в конкретном структурном подразделение
+        ///     Getting a list of users in the User role in a specific structural unit
         /// </summary>
         /// <returns></returns>
         public async Task<GetByStructureUnitIdResponse> GetByStructureUnitId(GetByStructureUnitIdRequest request)
@@ -381,7 +381,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public async Task<UserUpdateStatus> UpdateAsync(UserModelEx model)
         {
-            // todo если изменилось Username или Email, то пользователю отсылать на новый и старый Email оповещение, о том кто и что поменял
+            // todo if the Username or Email has changed, then the user will be sent a notification to the new and old Email about who and what has changed
             var dbContext = dbFactory.Create();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
@@ -454,7 +454,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 var user = customUserManager.Users.SingleOrDefault(u => u.Id == userId);
-                // todo проверка что пользователь user существует, если нет то возвращать статус UserNotFound
+                // todo check that the user user exists, if not then return the status UserNotFound
                 return user.Company.UniqueId;
             }
         }

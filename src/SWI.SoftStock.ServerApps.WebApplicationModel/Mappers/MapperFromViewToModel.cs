@@ -6,7 +6,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 {
     using SWI.SoftStock.ServerApps.WebApplicationModel.Common;
     using System;
-    using PagingModel = SWI.SoftStock.ServerApps.WebApplicationModel.PagingModel;
+    using PagingModel = PagingModel;
 
     public static class MapperFromViewToModel
     {
@@ -84,9 +84,9 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return result;
         }
 
-        public static SWI.SoftStock.ServerApps.WebApplicationModel.Common.PagingModel MapToPaging(PagingModel model)
+        public static WebApplicationModel.Common.PagingModel MapToPaging(PagingModel model)
         {
-            var result = new SWI.SoftStock.ServerApps.WebApplicationModel.Common.PagingModel();
+            var result = new WebApplicationModel.Common.PagingModel();
             result.PageIndex = model.PageIndex;
             result.PageSize = model.PageSize;
             return result;

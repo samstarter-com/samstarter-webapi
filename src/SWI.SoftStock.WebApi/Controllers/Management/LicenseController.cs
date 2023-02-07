@@ -117,7 +117,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
         [Route("{licenseId}/structureunit/{structureUnitId}")]
         public IActionResult Delete(Guid licenseId, Guid structureUnitId)
         {
-            // TODO ПРОВЕРКА ПРАВ на действия с лицензией
+            // TODO CHECKING THE RIGHTS TO ACT WITH A LICENSE
             var license = this.licenseService.GetLicenseModelExById(licenseId);
 
             if (license.StructureUnitId != structureUnitId)

@@ -39,16 +39,17 @@ namespace SWI.SoftStock.WebApi.Controllers.Personal
                 paging = new PagingModel() { PageIndex = 0, PageSize = int.MaxValue };
             }
 
-
             ordering ??= new OrderingModel();
 
             var claimsIdentity = (ClaimsIdentity)this.User.Identity;
             var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
+            var request = new GetByUserIdRequest
+            {
+                UserId = Guid.Parse(userId),
+                Ordering = MapperFromViewToModel.MapToOrdering(ordering),
+                Paging = MapperFromViewToModel.MapToPaging(paging)
+            };
 
-            var o = MapperFromViewToModel.MapToOrdering(ordering);
-            var request = new GetByUserIdRequest() { UserId = Guid.Parse(userId) };
-            request.Ordering = o;
-            request.Paging = MapperFromViewToModel.MapToPaging(paging);
             var response = await this.machineService.GetByUserIdAsync(request);
             var result = new
             {

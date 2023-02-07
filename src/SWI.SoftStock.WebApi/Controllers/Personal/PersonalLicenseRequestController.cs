@@ -38,11 +38,13 @@ namespace SWI.SoftStock.WebApi.Controllers.Personal
 
             var statusFilter = (PersonalLicenseRequestStatus)status;
 
-            var request = new SWI.SoftStock.ServerApps.WebApplicationContracts.PersonalLicenseRequestService.GetByUserId.GetByUserIdRequest();
-            request.UserId = Guid.Parse(userId);
-            request.Status = statusFilter;
-            request.Paging = MapperFromViewToModel.MapToPaging(paging);
-            request.Ordering = MapperFromViewToModel.MapToOrdering(ordering);
+            var request = new SWI.SoftStock.ServerApps.WebApplicationContracts.PersonalLicenseRequestService.GetByUserId.GetByUserIdRequest
+            {
+                UserId = Guid.Parse(userId),
+                Status = statusFilter,
+                Paging = MapperFromViewToModel.MapToPaging(paging),
+                Ordering = MapperFromViewToModel.MapToOrdering(ordering)
+            };
             var response = await this.personalLicenseRequestService.GetByUserIdAsync(request);
 
             var result = new

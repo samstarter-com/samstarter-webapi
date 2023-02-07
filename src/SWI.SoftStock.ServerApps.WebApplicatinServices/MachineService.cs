@@ -143,7 +143,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 if (machine.CurrentLinkedStructureUnit != null &&
                     machine.CurrentLinkedStructureUnit.UniqueId == structureUnitId)
                 {
-                    // если машины уже прикреплена к этому структурному подразделению, то ничего не делаем
+                    // if the machine is already attached to this structural unit, then do nothing
                     return MachineLinkToStructureUnitStatus.Success;
                 }
                 machine.CurrentLinkedStructureUnit =
