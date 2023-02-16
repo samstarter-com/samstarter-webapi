@@ -60,7 +60,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
             var request = new GetByIdRequest
             {
                 Id = softwareId,
-                StructureUnitId = cidParsed ? (Guid?)uniqueId : null,
+                StructureUnitId = cidParsed ? uniqueId : null,
                 IncludeItemsOfSubUnits = includeSubItems == 1,
                 CompanyId = companyId,
                 UserStructureUnitIds = userStructureUnitIds
@@ -204,7 +204,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
         {          
             var userId = Guid.Parse(UserId);
 
-            var suGuids = this.structureUnitService.GetStructureUnitsGuid(userId, new[] { "Manager" });
+            var suGuids = await this.structureUnitService.GetStructureUnitsGuid(userId, new[] { "Manager" });
 
             var request = new GetBySoftwareIdRequest();
             request.Paging = MapperFromViewToModel.MapToPaging(paging);

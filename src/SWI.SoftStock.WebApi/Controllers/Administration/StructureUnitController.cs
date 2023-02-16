@@ -47,33 +47,27 @@ namespace SWI.SoftStock.WebApi.Controllers.Administrations
 
             var tree = this.structureUnitService.GetStructureUnitModels(Guid.Parse(UserId),
                 parsed
-                    ? (Guid?)
-                        uniqueId
+                    ? uniqueId
                     : null,
-                new[] { role },
-                out
-                    _);
+                new[] { role });
             return this.Ok(tree);
         }
 
         [HttpGet]
         [Route("{id}")]
-        public IActionResult GetDetails(string id)
+        public async Task<IActionResult> GetDetails(string id)
         {          
             var userGuid = Guid.Parse(UserId);
             if (!Guid.TryParse(id, out var uniqueId))
             {
-                uniqueId = this.structureUnitService.GetStructureUnitModels(userGuid,
+                uniqueId = (await this.structureUnitService.GetStructureUnitModels(userGuid,
                     null,
-                    new[] { "Admin" },
-                    out
-                    _).First().UniqueId;
+                    new[] { "Admin" })).Item1.First().UniqueId;
             }
 
             var adminRoleId = this.rolemanager.Roles.Single(r => r.Name == "Admin").Id;
-            var detail = this.structureUnitService.GetByUniqueId(uniqueId);
-            detail.IsRootUnit = detail.ParentUniqueId == null || this.userService.GetUserRoles(detail.ParentUniqueId.Value, userGuid)
-                                    .All(urm => urm.RoleId != adminRoleId);
+            var detail = await this.structureUnitService.GetByUniqueId(uniqueId);
+            detail.IsRootUnit = detail.ParentUniqueId == null || (await this.userService.GetUserRoles(detail.ParentUniqueId.Value, userGuid)).All(urm => urm.RoleId != adminRoleId);
 
             return this.Ok(new
             {
@@ -84,12 +78,13 @@ namespace SWI.SoftStock.WebApi.Controllers.Administrations
 
         [HttpPut]
         [Route("")]
-        public IActionResult Add(StructureUnitModel model)
+        public async Task<IActionResult> Add(StructureUnitModel model)
         {
             if (this.ModelState.IsValid)
             {
-                var uniqueId = this.structureUnitService.CreateAndAdd(model, model.ParentUniqueId.Value, out var status);
-
+                var res = await this.structureUnitService.CreateAndAdd(model, model.ParentUniqueId.Value);
+                var uniqueId = res.Item1;
+                var status = res.Item2;
                 switch (status)
                 {
                     case StructureUnitCreationStatus.Success:
@@ -162,10 +157,10 @@ namespace SWI.SoftStock.WebApi.Controllers.Administrations
 
         [HttpDelete]
         [Route("{id}")]
-        public IActionResult Delete(Guid id)
+        public async Task<IActionResult> Delete(Guid id)
         {
-            Guid? parentUniqueId = this.structureUnitService.GetParentUniqueId(id);
-            StructureUnitDeleteStatus statuses = this.structureUnitService.DeleteByUniqueId(id);
+            Guid? parentUniqueId = await this.structureUnitService.GetParentUniqueId(id);
+            StructureUnitDeleteStatus statuses = await this.structureUnitService.DeleteByUniqueId(id);
             if (statuses > (int)StructureUnitDeleteStatus.None)
             {
                 var errors = new List<string>();

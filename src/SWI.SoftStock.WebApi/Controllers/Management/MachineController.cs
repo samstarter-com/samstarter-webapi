@@ -194,9 +194,9 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
 
         [HttpDelete]
         [Route("{machineId}")]
-        public IActionResult Delete(Guid machineId)
+        public async Task<IActionResult> Delete(Guid machineId)
         {
-            var status = this.machineService.Delete(machineId);
+            var status = await this.machineService.Delete(machineId);
             if (status != MachineDeleteStatus.Success)
             {
                 this.log.LogWarning("Cannot delete machine. machineId:{0}", machineId);
@@ -210,9 +210,9 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
 
         [HttpPost]
         [Route("{machineId}/disable")]
-        public IActionResult Disable(Guid machineId)
+        public async Task<IActionResult> Disable(Guid machineId)
         {
-            var status = this.machineService.Disable(machineId);
+            var status = await this.machineService.Disable(machineId);
             if (status != MachineDisableStatus.Success)
             {
                 this.log.LogWarning("Cannot disable machine. machineId:{0}", machineId);
@@ -224,9 +224,9 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
 
         [HttpPost]
         [Route("{machineId}/enable")]
-        public IActionResult Enable(Guid machineId)
+        public async Task<IActionResult> Enable(Guid machineId)
         {
-            var status = this.machineService.Enable(machineId);
+            var status = await this.machineService.Enable(machineId);
             if (status != MachineEnableStatus.Success)
             {
                 this.log.LogWarning("Cannot enable machine. machineId:{0}", machineId);
@@ -237,7 +237,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
 
         [HttpGet]
         [Route("softwares")]
-        public IActionResult MachinesSoftwares([FromQuery] Guid machineId, [FromQuery] PagingModel paging,
+        public async Task<IActionResult> MachinesSoftwares([FromQuery] Guid machineId, [FromQuery] PagingModel paging,
             [FromQuery] OrderingModel ordering, int filterType,
             string filterName = null, string filterPublisherName = null, string filterVersion = null,
             string filterLicenseName = null)
@@ -252,7 +252,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
                     filterLicenseName)
             };
 
-            var response = this.softwareService.GetByMachineId(request);
+            var response = await this.softwareService.GetByMachineId(request);
             var message = GetSoftwaresByMachineIdStatusEn.GetErrorMessage(response.Status);
 
             if (response.Status == GetSoftwaresByMachineIdStatus.Success)
@@ -290,7 +290,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
         public async Task<IActionResult> MachineLicenses(Guid machineId, [FromQuery] PagingModel paging, [FromQuery] OrderingModel ordering,
             int status)
         {          
-            var suGuids = this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(UserId), new[] { "Manager" });
+            var suGuids = await this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(UserId), new[] { "Manager" });
 
             var request = new GetAvailableLicensesByMachineIdRequest();
             request.SuIds = suGuids;

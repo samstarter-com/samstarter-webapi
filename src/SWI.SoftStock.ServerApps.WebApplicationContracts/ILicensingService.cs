@@ -29,11 +29,11 @@ namespace SWI.SoftStock.ServerApps.WebApplicationContracts
 
 		#endregion
 
-		LicenseSoftwareResponse LicenseSoftware(LicenseSoftwareRequest softwareRequest);
-        LicenseMachineResponse LicenseMachine(LicenseMachineRequest request);
+		Task<LicenseSoftwareResponse> LicenseSoftware(LicenseSoftwareRequest softwareRequest);
+        Task<LicenseMachineResponse> LicenseMachine(LicenseMachineRequest request);
 		Task<LicenseMachinesResponse> LicenseMachinesAsync(LicenseMachinesRequest request);
-		UnLicenseSoftwareResponse UnLicenseSoftware(UnLicenseSoftwareRequest request);
-		UnLicenseMachineResponse UnLicenseMachine(UnLicenseMachineRequest request);
+		Task<UnLicenseSoftwareResponse> UnLicenseSoftware(UnLicenseSoftwareRequest request);
+		Task<UnLicenseMachineResponse> UnLicenseMachine(UnLicenseMachineRequest request);
         Task<UnLicenseMachinesResponse> UnLicenseMachinesAsync(UnLicenseMachinesRequest request);
         Task<LicenseLicenseResponse> LicenseLicenseAsync(LicenseLicenseRequest request);
         Task<UnLicenseLicensesResponse> UnLicenseLicensesAsync(UnLicenseLicensesRequest request);

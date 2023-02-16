@@ -12,22 +12,22 @@ namespace SWI.SoftStock.ServerApps.WebApplicationContracts
     public interface ILicenseRequestService
     {
         #region license request query
-        NewLicenseRequestResponse GetNewLicenseRequest(NewLicenseRequestRequest request);
+        Task<NewLicenseRequestResponse> GetNewLicenseRequest(NewLicenseRequestRequest request);
         Task<LicenseRequestModel> GetLicenseRequestModelByIdAsync(Guid licenseRequestId);
         GetByStructureUnitIdResponse GetByStructureUnitId(GetByStructureUnitIdRequest request);
-        LicenseRequestDocumentModelEx GetDocumentById(Guid id);
+        Task<LicenseRequestDocumentModelEx> GetDocumentById(Guid id);
         Task<GetNewLicenseRequestCountResponse> GetNewLicenseRequestCount(GetNewLicenseRequestCountRequest request);
 
         #endregion
 
         #region license request commnd
 
-        Guid? Add(NewLicenseRequestModel model, Guid managerId, bool sending, out SaveLicenseRequestStatus status);
-        UpdateLicenseRequestStatus Update(LicenseRequestModel model, bool sending);
-        SendLicenseRequestStatus SendToUser(Guid licenseRequestId);
+        Task<Tuple<Guid?, SaveLicenseRequestStatus>> Add(NewLicenseRequestModel model, Guid managerId, bool sending);
+        Task<UpdateLicenseRequestStatus> Update(LicenseRequestModel model, bool sending);
+        Task<SendLicenseRequestStatus> SendToUser(Guid licenseRequestId);
         Task<CreateLicenseBasedOnLicenseRequestResponse> CreateLicenseAsync(CreateLicenseBasedOnLicenseRequestRequest request);
         Task ReceivedAsync(Guid id);
-        ArchiveLicenseRequestStatus Archive(Guid licenseRequestId);
+        Task<ArchiveLicenseRequestStatus> Archive(Guid licenseRequestId);
 
         #endregion
     }

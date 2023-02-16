@@ -212,6 +212,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 unitOfWork.ObservableRepository.Query(o =>
                     o.Company.UniqueId == request.CompanyId && o.SoftwareId == software.Id);
 
+            // todo refactor code below:
             var allowedStructureUnitIds = request.UserStructureUnitIds
                 .Select(suId => unitOfWork.StructureUnitRepository.GetAll().Single(s => s.UniqueId == suId))
                 .SelectMany(su => su.Descendants(sud => sud.ChildStructureUnits)).Select(su => su.Id);
@@ -289,7 +290,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                     SoftwaresUnlicensedCount = i.SoftwaresUnlicensedCount
                 });
 
-            var totalRecords = query.Count();
+            var totalRecords = await query.CountAsync();
 
             var keySelector = this.GetByStructureUnitIdOrderingSelecetor(request.Ordering.Sort);
             var softwares =
@@ -370,12 +371,12 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             var result = new SoftwareCollection(string.Empty, string.Empty)
             {
                 Items = softwareModels,
-                TotalRecords = softwareModels.Count()
+                TotalRecords = softwareModels.Length
             };
             return result;
         }
 
-        public GetSoftwaresByMachineIdResponse GetByMachineId(GetSoftwaresByMachineIdRequest request)
+        public async Task<GetSoftwaresByMachineIdResponse> GetByMachineId(GetSoftwaresByMachineIdRequest request)
         {
             var licenseFilterType = (LicenseFilterType) request.FilterType;
             var response = new GetSoftwaresByMachineIdResponse
@@ -384,10 +385,10 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             };
             var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
-            var machine =
+            var machine = await
                 unitOfWork.MachineRepository.GetAll()
                     .Include(m => m.CurrentLinkedStructureUnit)
-                    .SingleOrDefault(m => m.UniqueId == request.MachineId);
+                    .SingleOrDefaultAsync(m => m.UniqueId == request.MachineId);
 
             if (machine == null)
             {
@@ -473,7 +474,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                         ms => ms.License != null && ms.License.Name.Contains(contains));
             }
 
-            var totalRecords = query.Count();
+            var totalRecords = await query.CountAsync();
             query = query
                 .Include(ms => ms.Software)
                 .Include(ms => ms.Software.Publisher)
@@ -497,7 +498,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                         .Take(request.Paging.PageSize);
             }
 
-            var items = query.ToArray().Select(s =>
+            var items = (await query.ToArrayAsync()).Select(s =>
             {
                 var soft =
                     MapperFromModelToView.MapToSoftwareModel

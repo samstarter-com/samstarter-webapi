@@ -12,6 +12,7 @@ using SWI.SoftStock.ServerApps.WebApplicationServices.Mappers;
 using SWI.SoftStock.WebApi.Common;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace SWI.SoftStock.WebApi.Controllers.Management
 {
@@ -75,13 +76,13 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
 
         [HttpGet]
         [Route("{observableId}/machines")]
-        public IActionResult Machines(Guid observableId, [FromQuery] PagingModel paging, [FromQuery] OrderingModel ordering)
+        public async Task<IActionResult> Machines(Guid observableId, [FromQuery] PagingModel paging, [FromQuery] OrderingModel ordering)
         {
             GetByObservableIdRequest request = new GetByObservableIdRequest();
             request.ObservableId = observableId;
             request.Paging = MapperFromViewToModel.MapToPaging(paging);
             request.Ordering = MapperFromViewToModel.MapToOrdering(ordering);
-            var response = this.machineService.GetByObservableId(request);
+            var response = await this.machineService.GetByObservableId(request);
             var result = new
             {
                 items = response.Model.Items,
@@ -99,9 +100,10 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
 
         [HttpPost]
         [Route("{observableId}/machine/{machineId}")]
-        public IActionResult Append(Guid observableId, Guid machineId)
+        public async Task<IActionResult> Append(Guid observableId, Guid machineId)
         {
-            this.observableService.Append(observableId, machineId, out var status);
+            var res = await this.observableService.Append(observableId, machineId);
+            var status = res.Item2;
             switch (status)
             {
                 case ObservableAppendStatus.Success:
@@ -127,9 +129,9 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
 
         [HttpPost]
         [Route("{observableId}/remove/{machineId}")]
-        public IActionResult RemovePost(Guid machineId, Guid observableId)
+        public async Task<IActionResult> RemovePost(Guid machineId, Guid observableId)
         {
-            var status = this.observableService.Remove(machineId, observableId);
+            var status = await this.observableService.Remove(machineId, observableId);
 
             switch (status)
             {
@@ -153,7 +155,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
 
         [HttpPut]
         [Route("")]
-        public IActionResult Add(ObservableModelEx modelEx)
+        public async Task<IActionResult> Add(ObservableModelEx modelEx)
         {
             if (!this.ModelState.IsValid)
             {
@@ -164,8 +166,9 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
          
             var userId = Guid.Parse(UserId);
             var companyId = this.userService.GetCompanyId(userId);
-            Guid? observableId = this.observableService.Add(modelEx, companyId, userId, out var status);
-
+            var res = await this.observableService.Add(modelEx, companyId, userId);
+            Guid? observableId = res.Item1;
+            var status = res.Item2;
             switch (status)
             {
                 case ObservableCreationStatus.Success:
@@ -189,9 +192,9 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
 
         [HttpDelete]
         [Route("{observableId}")]
-        public IActionResult Delete(Guid observableId)
+        public async Task<IActionResult> Delete(Guid observableId)
         {
-            ObservableDeleteStatus status = this.observableService.Delete(observableId);
+            ObservableDeleteStatus status = await this.observableService.Delete(observableId);
             if (status != ObservableDeleteStatus.Success)
             {
                 this.log.LogWarning("Cannot delete observable. observableId:{0}", observableId);

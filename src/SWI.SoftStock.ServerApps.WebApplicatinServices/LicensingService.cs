@@ -35,14 +35,14 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
 		#region ILicensingService Members
 
-		public LicenseSoftwareResponse LicenseSoftware(LicenseSoftwareRequest softwareRequest)
+		public async Task <LicenseSoftwareResponse> LicenseSoftware(LicenseSoftwareRequest softwareRequest)
 		{
 			var response = new LicenseSoftwareResponse();
 
 			var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var software =
-                unitOfWork.SoftwareRepository.GetAll().SingleOrDefault(s => s.UniqueId == softwareRequest.SoftwareId);
+                await unitOfWork.SoftwareRepository.GetAll().SingleOrDefaultAsync(s => s.UniqueId == softwareRequest.SoftwareId);
 
             if (software == null)
             {
@@ -50,8 +50,8 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 return response;
             }
 
-            var machine =
-                unitOfWork.MachineRepository.GetAll().SingleOrDefault(m => m.UniqueId == softwareRequest.MachineId);
+            var machine = await
+                unitOfWork.MachineRepository.GetAll().SingleOrDefaultAsync(m => m.UniqueId == softwareRequest.MachineId);
 
             if (machine == null)
             {
@@ -59,8 +59,8 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 return response;
             }
 
-            var license =
-                unitOfWork.LicenseRepository.GetAll().SingleOrDefault(m => m.UniqueId == softwareRequest.LicenseId);
+            var license = await
+                unitOfWork.LicenseRepository.GetAll().SingleOrDefaultAsync(m => m.UniqueId == softwareRequest.LicenseId);
             if (license == null)
             {
                 response.Status = LicenseSoftwareStatus.LicenseNotFound;
@@ -95,10 +95,10 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 return response;
             }
 
-            var notLicensedMachineSoftwares =
+            var notLicensedMachineSoftwares =await 
                 machineSoftwares.Where(
                     ms => !ms.LicenseMachineSoftwares.Any() || ms.LicenseMachineSoftwares.All(lms => lms.IsDeleted))
-                    .ToArray();
+                    .ToArrayAsync();
 
             var lmsss = notLicensedMachineSoftwares.Select(
                 machineSoftware => new LicenseMachineSoftware
@@ -116,14 +116,14 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return response;
         }
 
-		public UnLicenseSoftwareResponse UnLicenseSoftware(UnLicenseSoftwareRequest request)
+		public async Task<UnLicenseSoftwareResponse> UnLicenseSoftware(UnLicenseSoftwareRequest request)
 		{
 			var response = new UnLicenseSoftwareResponse();
 			var utcNow = DateTime.UtcNow;
 			var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var software =
-                unitOfWork.SoftwareRepository.GetAll().SingleOrDefault(s => s.UniqueId == request.SoftwareId);
+                await unitOfWork.SoftwareRepository.GetAll().SingleOrDefaultAsync(s => s.UniqueId == request.SoftwareId);
 
             if (software == null)
             {
@@ -132,7 +132,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             }
 
             var machine =
-                unitOfWork.MachineRepository.GetAll().SingleOrDefault(m => m.UniqueId == request.MachineId);
+                await unitOfWork.MachineRepository.GetAll().SingleOrDefaultAsync(m => m.UniqueId == request.MachineId);
 
             if (machine == null)
             {
@@ -143,21 +143,21 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             var machineSoftwares =
                 unitOfWork.MachineSoftwareRepository.GetAll().Where(
                     ms => ms.MachineId == machine.Id && ms.SoftwareId == software.Id);
-            if (!machineSoftwares.Any())
+            if (!(await machineSoftwares.AnyAsync()))
             {
                 response.Status = UnLicenseSoftwareStatus.SoftwareOnMachineNotFound;
                 return response;
             }
             if (
-                machineSoftwares.All(
+                await machineSoftwares.AllAsync(
                     ms => !ms.LicenseMachineSoftwares.Any() || ms.LicenseMachineSoftwares.All(lms => lms.IsDeleted)))
             {
                 response.Status = UnLicenseSoftwareStatus.SoftwareIsNotLinked;
                 return response;
             }
 
-            var lmsss =
-                machineSoftwares.SelectMany(mss => mss.LicenseMachineSoftwares).Where(lms => !lms.IsDeleted).ToArray();
+            var lmsss = await
+                machineSoftwares.SelectMany(mss => mss.LicenseMachineSoftwares).Where(lms => !lms.IsDeleted).ToArrayAsync();
             foreach (var licenseMachineSoftware in lmsss)
             {
                 licenseMachineSoftware.IsDeleted = true;
@@ -168,14 +168,14 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return response;
         }
 
-		public LicenseMachineResponse LicenseMachine(LicenseMachineRequest request)
+		public async Task<LicenseMachineResponse> LicenseMachine(LicenseMachineRequest request)
 		{
 			var response = new LicenseMachineResponse();
 
 			var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
-            var machine =
-                unitOfWork.MachineRepository.GetAll().SingleOrDefault(m => m.UniqueId == request.MachineId);
+            var machine = await
+                unitOfWork.MachineRepository.GetAll().SingleOrDefaultAsync(m => m.UniqueId == request.MachineId);
 
             if (machine == null)
             {
@@ -183,8 +183,8 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 return response;
             }
 
-            var license =
-                unitOfWork.LicenseRepository.GetAll().SingleOrDefault(m => m.UniqueId == request.LicenseId);
+            var license = await
+                unitOfWork.LicenseRepository.GetAll().SingleOrDefaultAsync(m => m.UniqueId == request.LicenseId);
             if (license == null)
             {
                 response.Status = LicenseMachineStatus.LicenseNotFound;
@@ -197,12 +197,12 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 .Where(ms => lsSoftwareIds.Contains(ms.SoftwareId));
 
 
-            if (!machineSoftwares.Any())
+            if (!(await machineSoftwares.AnyAsync()))
             {
                 response.Status = LicenseMachineStatus.SoftwareOnMachineNotFound;
                 return response;
             }
-            if (machineSoftwares.All(ms => ms.LicenseMachineSoftwares.Any(lms => !lms.IsDeleted)))
+            if (await machineSoftwares.AllAsync(ms => ms.LicenseMachineSoftwares.Any(lms => !lms.IsDeleted)))
             {
                 response.Status = LicenseMachineStatus.SoftwareIsLinked;
                 return response;
@@ -217,10 +217,10 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 return response;
             }
 
-            var mss =
+            var mss = await
                 machineSoftwares.Where(
                     ms => !ms.LicenseMachineSoftwares.Any() || ms.LicenseMachineSoftwares.All(lms => lms.IsDeleted))
-                    .ToArray();
+                    .ToArrayAsync();
 
             var lmsss = mss.Select(
                 machineSoftware => new LicenseMachineSoftware
@@ -258,16 +258,16 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
 			var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
-            var license = unitOfWork.LicenseRepository.GetAll().SingleOrDefault(m => m.UniqueId == request.LicenseId);
-            var licenseMachineIds =
+            var license = await unitOfWork.LicenseRepository.GetAll().SingleOrDefaultAsync(m => m.UniqueId == request.LicenseId);
+            var licenseMachineIds = await
                 unitOfWork.MachineRepository.GetAll()
                     .Where(m => licenseMachineUniqueIds.Contains(m.UniqueId))
                     .Select(m => m.Id)
-                    .ToArray();
+                    .ToArrayAsync();
 
             // license number check. is > 0
             var linkedLicenseCount = license.TotalUsedLicenseCount(licenseMachineIds);
-            if (linkedLicenseCount + licenseMachineIds.Count() > license.Count)
+            if (linkedLicenseCount + licenseMachineIds.Length > license.Count)
             {
                 response.Status = LicenseMachinesStatus.LicenseCountExceeded;
                 return response;
@@ -280,9 +280,9 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 .Where(ms => licenseMachineIds.Contains(ms.MachineId))
                 .Where(ms => lsSoftwareIds.Contains(ms.SoftwareId));
 
-            var mss =
+            var mss = await
                 machineSoftwares1.Where(
-                    ms => !ms.LicenseMachineSoftwares.Any() || ms.LicenseMachineSoftwares.All(lms => lms.IsDeleted)).ToArray();
+                    ms => !ms.LicenseMachineSoftwares.Any() || ms.LicenseMachineSoftwares.All(lms => lms.IsDeleted)).ToArrayAsync();
 
             var lmsss = mss.Select(
                 machineSoftware => new LicenseMachineSoftware
@@ -320,8 +320,8 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 			var licenseMachineIds = lmResponse.Model.Items.Select(m => m.MachineId);
 			var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
-            var license =
-                unitOfWork.LicenseRepository.GetAll().SingleOrDefault(m => m.UniqueId == request.LicenseId);
+            var license = await
+                unitOfWork.LicenseRepository.GetAll().SingleOrDefaultAsync(m => m.UniqueId == request.LicenseId);
 
             if (license == null)
             {
@@ -330,11 +330,11 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             }
             var licenseId = license.Id;
 
-            var licenseMachineSoftwares = unitOfWork.LicenseMachineSoftwareRepository.GetAll()
+            var licenseMachineSoftwares = await unitOfWork.LicenseMachineSoftwareRepository.GetAll()
                 .Where(lms => lms.LicenseSoftware.LicenseId == licenseId)
                 .Where(lms => licenseMachineIds.Contains(lms.MachineSoftware.Machine.UniqueId))
                 .Where(lms => !lms.IsDeleted)
-                .ToArray();
+                .ToArrayAsync();
 
             foreach (var licenseMachineSoftware in licenseMachineSoftwares)
             {
@@ -368,10 +368,10 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
 			var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
-            var machine =
-                unitOfWork.MachineRepository.GetAll().SingleOrDefault(m => m.UniqueId == request.MachineId);
+            var machine = await
+                unitOfWork.MachineRepository.GetAll().SingleOrDefaultAsync(m => m.UniqueId == request.MachineId);
 
-            var licenses = unitOfWork.LicenseRepository.GetAll().Where(l => machineLicenseIds.Contains(l.UniqueId));
+            var licenses = await unitOfWork.LicenseRepository.GetAll().Where(l => machineLicenseIds.Contains(l.UniqueId)).ToArrayAsync();
             foreach (var license in licenses)
             {
                 // license number check. is > 0
@@ -427,8 +427,8 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 			var dbContext = dbFactory.CreateDbContext();
 			using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
 			{
-				var machine =
-					unitOfWork.MachineRepository.GetAll().SingleOrDefault(m => m.UniqueId == request.MachineId);
+				var machine = await
+					unitOfWork.MachineRepository.GetAll().SingleOrDefaultAsync(m => m.UniqueId == request.MachineId);
 
 				if (machine == null)
 				{
@@ -437,11 +437,11 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 				}
 				var machineId = machine.Id;
 
-				var licenseMachineSoftwares =
+				var licenseMachineSoftwares = await
 					unitOfWork.LicenseMachineSoftwareRepository.GetAll()
 						.Where(lms => lms.MachineSoftware.MachineId == machineId)
 						.Where(lms => licenseLicenseIds.Contains(lms.LicenseSoftware.License.UniqueId))
-						.Where(lms => !lms.IsDeleted).ToArray();
+						.Where(lms => !lms.IsDeleted).ToArrayAsync();
 
 				foreach (var licenseMachineSoftware in licenseMachineSoftwares)
 				{
@@ -456,14 +456,14 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 		}
 
 
-		public UnLicenseMachineResponse UnLicenseMachine(UnLicenseMachineRequest request)
+		public async Task<UnLicenseMachineResponse> UnLicenseMachine(UnLicenseMachineRequest request)
 		{
 			var response = new UnLicenseMachineResponse();
 			var utcNow = DateTime.UtcNow;
 			var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
-            var machine =
-                unitOfWork.MachineRepository.GetAll().SingleOrDefault(m => m.UniqueId == request.MachineId);
+            var machine = await
+                unitOfWork.MachineRepository.GetAll().SingleOrDefaultAsync(m => m.UniqueId == request.MachineId);
 
             if (machine == null)
             {
@@ -471,8 +471,8 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 return response;
             }
 
-            var license =
-                unitOfWork.LicenseRepository.GetAll().SingleOrDefault(m => m.UniqueId == request.LicenseId);
+            var license = await
+                unitOfWork.LicenseRepository.GetAll().SingleOrDefaultAsync(m => m.UniqueId == request.LicenseId);
 
             if (license == null)
             {
@@ -482,11 +482,11 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             var licenseId = license.Id;
             var machineId = machine.Id;
 
-            var licenseMachineSoftwares = unitOfWork.LicenseMachineSoftwareRepository.GetAll()
+            var licenseMachineSoftwares = await unitOfWork.LicenseMachineSoftwareRepository.GetAll()
             .Where(lms => lms.LicenseSoftware.LicenseId == licenseId)
             .Where(lms => lms.MachineSoftware.MachineId == machineId)
             .Where(lms => !lms.IsDeleted)
-            .ToArray();
+            .ToArrayAsync();
 
             if (licenseMachineSoftwares.Length == 0)
             {
@@ -512,7 +512,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             };
             var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
-            var license = unitOfWork.LicenseRepository.GetAll().SingleOrDefault(s => s.UniqueId == request.LicenseId);
+            var license = await unitOfWork.LicenseRepository.GetAll().SingleOrDefaultAsync(s => s.UniqueId == request.LicenseId);
             if (license == null)
             {
                 response.Status = GetLicensedMachineStatus.LicenseNotFound;
@@ -618,7 +618,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 Where(o => request.SuIds.Contains(o.UniqueId));
 
             var susId = sus.Select(s => s.Id);
-            var machine = unitOfWork.MachineRepository.GetAll().SingleOrDefault(m => m.UniqueId == request.MachineId);
+            var machine = await unitOfWork.MachineRepository.GetAll().SingleOrDefaultAsync(m => m.UniqueId == request.MachineId);
             if (machine == null)
             {
                 response.Status = GetAvailableLicensesByMachineIdStatus.NotFound;

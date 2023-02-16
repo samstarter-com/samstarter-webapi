@@ -88,19 +88,19 @@ namespace SWI.SoftStock.WebApi.Controllers.Personal
 
         [HttpGet]
         [Route("{fileid}/download")]
-        public FileResult Download(Guid fileid)
+        public async Task<FileResult> Download(Guid fileid)
         {
-            var document = this.personalLicenseRequestService.GetDocumentById(fileid);
+            var document = await this.personalLicenseRequestService.GetDocumentById(fileid);
             return this.File(document.Content, "application/octet-stream", document.Name);
         }
 
         [HttpPost]
         [Route("{id}/answer")]
-        public IActionResult Answer([FromBody] PersonalLicenseRequestAnswerModel model)
+        public async Task<IActionResult> Answer([FromBody] PersonalLicenseRequestAnswerModel model)
         {
             if (!this.ModelState.IsValid) return this.BadRequest(new { this.ModelState });
 
-            var status = this.personalLicenseRequestService.Answer(model);
+            var status = await this.personalLicenseRequestService.Answer(model);
             var message = AnswerPersonalLicenseRequestStatusMessage.GetErrorMessage(status);
             switch (status)
             {

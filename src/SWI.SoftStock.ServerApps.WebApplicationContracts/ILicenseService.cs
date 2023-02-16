@@ -20,11 +20,11 @@ namespace SWI.SoftStock.ServerApps.WebApplicationContracts
 
 		#endregion
 
-		IEnumerable<DropDownItemModel> GetLicenseTypes();
+		Task<IEnumerable<DropDownItemModel>> GetLicenseTypes();
 
 		#region license-software query
 
-		GetAvailableLicensesBySoftwareIdResponse GetAvailableLicensesBySoftwareId(
+		Task<GetAvailableLicensesBySoftwareIdResponse> GetAvailableLicensesBySoftwareId(
 			GetAvailableLicensesBySoftwareIdRequest request);
 
 		#endregion
@@ -33,15 +33,15 @@ namespace SWI.SoftStock.ServerApps.WebApplicationContracts
 
 		Task<GetByStructureUnitIdResponse> GetByStructureUnitIdAsync(GetByStructureUnitIdRequest request);
 
-		GetStructureUnitIdResponse GetStructureUnitId(GetStructureUnitIdRequest request);
+		Task<GetStructureUnitIdResponse> GetStructureUnitId(GetStructureUnitIdRequest request);
 
 		#endregion
 
 		#region license query
 
-		LicenseModelEx GetLicenseModelExById(Guid licenseId);
-		LicenseModel GetLicenseModelById(Guid licenseId);
-		DocumentModelEx GetDocumentById(Guid id);
+		Task<LicenseModelEx> GetLicenseModelExById(Guid licenseId);
+		Task<LicenseModel> GetLicenseModelById(Guid licenseId);
+		Task<DocumentModelEx> GetDocumentById(Guid id);
 
 		#endregion
 
@@ -49,14 +49,14 @@ namespace SWI.SoftStock.ServerApps.WebApplicationContracts
 
         Task<LicenseAddResponse> AddAsync(LicenseModelEx model);
         Task<LicenseUpdateStatus> UpdateAsync(LicenseModelEx model);
-		LicenseDeleteStatus DeleteById(Guid licenseId);
+		Task<LicenseDeleteStatus> DeleteById(Guid licenseId);
 
 		#endregion
 
 		#region license usage query
 
-		GetLicenseUsageResponse GetLicenseUsage(GetLicenseUsageRequest request);
-		GetLicenseUsageListResponse GetLicenseUsageList(GetLicenseUsageListRequest request);
+		Task<GetLicenseUsageResponse> GetLicenseUsage(GetLicenseUsageRequest request);
+		Task<GetLicenseUsageListResponse> GetLicenseUsageList(GetLicenseUsageListRequest request);
 
 		#endregion
 	}

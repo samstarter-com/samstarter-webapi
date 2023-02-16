@@ -13,6 +13,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 {
     using Microsoft.EntityFrameworkCore;
     using SWI.SoftStock.ServerApps.WebApplicationContracts.ObservableService.GetAll;
+    using System.Threading.Tasks;
 
     public class ObservableService : IObservableService
     {
@@ -25,12 +26,12 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         #region IObservableService Members
 
-        public ObservableModelEx GetObservableModelById(Guid observableId)
+        public async Task<ObservableModelEx> GetObservableModelById(Guid observableId)
         {
             var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
-            Observable observable =
-                unitOfWork.ObservableRepository.GetAll().Single(m => m.UniqueId == observableId);
+            Observable observable = await
+                unitOfWork.ObservableRepository.GetAll().SingleAsync(m => m.UniqueId == observableId);
             return observable != null
                        ? MapperFromModelToView.MapToObservableModelEx(observable)
                        : null;
@@ -73,22 +74,23 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return response;
         }
 
-        public Guid? Add(ObservableModelEx modelEx, Guid companyId, Guid createdByUserId, out ObservableCreationStatus status)
+        public async Task<Tuple<Guid?, ObservableCreationStatus>> Add(ObservableModelEx modelEx, Guid companyId, Guid createdByUserId)
         {
             Observable observable;
+            ObservableCreationStatus status;
             var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
-                var cId = unitOfWork.StructureUnitRepository.GetAll().Single(su => su.UniqueId == companyId).Id;
-                Software software =
-                    unitOfWork.SoftwareRepository.GetAll().SingleOrDefault(l => l.UniqueId == modelEx.SoftwareId);
+                var cId = (await unitOfWork.StructureUnitRepository.GetAll().SingleAsync(su => su.UniqueId == companyId)).Id;
+                Software software = await
+                    unitOfWork.SoftwareRepository.GetAll().SingleOrDefaultAsync(l => l.UniqueId == modelEx.SoftwareId);
                 if (software == null)
                 {
                     status = ObservableCreationStatus.SoftwareNotFound;
                     return null;
                 }
                 if (
-                    unitOfWork.ObservableRepository.GetAll().Any(
+                    await unitOfWork.ObservableRepository.GetAll().AnyAsync(
                         o => o.CompanyId == cId && o.SoftwareId == software.Id))
                 {
                     status = ObservableCreationStatus.ObservableSoftwareExist;
@@ -99,41 +101,42 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 unitOfWork.Save();
             }
             status = ObservableCreationStatus.Success;
-            return observable.UniqueId;
+            return new Tuple<Guid?, ObservableCreationStatus>(observable.UniqueId, status);
         }
 
-        public Guid? Append(Guid observableId, Guid machineId, out ObservableAppendStatus status)
+        public async Task<Tuple<Guid?, ObservableAppendStatus>> Append(Guid observableId, Guid machineId)
         {
             MachineObservedProcess machineObservedProcess;
+            ObservableAppendStatus status;
             var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
-                Observable observable =
-                    unitOfWork.ObservableRepository.GetAll().SingleOrDefault(l => l.UniqueId == observableId);
+                Observable observable = await
+                    unitOfWork.ObservableRepository.GetAll().SingleOrDefaultAsync(l => l.UniqueId == observableId);
                 if (observable == null)
                 {
                     status = ObservableAppendStatus.ObservableNotFound;
-                    return null;
+                    return new Tuple<Guid?, ObservableAppendStatus>(null, status);
                 }
-                Machine machine =
-                    unitOfWork.MachineRepository.GetAll().SingleOrDefault(l => l.UniqueId == machineId);
+                Machine machine = await
+                    unitOfWork.MachineRepository.GetAll().SingleOrDefaultAsync(l => l.UniqueId == machineId);
                 if (machine == null)
                 {
                     status = ObservableAppendStatus.MachineNotFound;
-                    return null;
+                    return new Tuple<Guid?, ObservableAppendStatus>(null, status);
                 }
 
                 if (!machine.MachineSoftwares.Any(ms => ms.SoftwareId == observable.SoftwareId))
                 {
                     status = ObservableAppendStatus.SoftwareNotInstalledOnMachine;
-                    return null;
+                    return new Tuple<Guid?, ObservableAppendStatus>(null, status);
                 }
                 if (
-                    unitOfWork.MachineObservedProcessRepository.GetAll().Any(
+                    await unitOfWork.MachineObservedProcessRepository.GetAll().AnyAsync(
                         mop => mop.ObservableId == observable.Id && mop.MachineId == machine.Id))
                 {
                     status = ObservableAppendStatus.AlreadyAppended;
-                    return null;
+                    return new Tuple<Guid?, ObservableAppendStatus>(null, status);
                 }
                 machineObservedProcess = new MachineObservedProcess
                 {
@@ -145,17 +148,17 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 unitOfWork.Save();
             }
             status = ObservableAppendStatus.Success;
-            return machineObservedProcess.UniqueId;
+            return new Tuple<Guid?, ObservableAppendStatus>(machineObservedProcess.UniqueId, status);
         }
 
-        public ObservableRemoveStatus Remove(Guid machineId, Guid observableId)
+        public async Task<ObservableRemoveStatus> Remove(Guid machineId, Guid observableId)
         {
             {
                 var dbContext = dbFactory.CreateDbContext();
                 using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
                 {
-                    MachineObservedProcess machineObservedProcess =
-                        unitOfWork.MachineObservedProcessRepository.GetAll().SingleOrDefault(
+                    MachineObservedProcess machineObservedProcess = await
+                        unitOfWork.MachineObservedProcessRepository.GetAll().SingleOrDefaultAsync(
                             l => l.Machine.UniqueId == machineId && l.Observable.UniqueId == observableId);
                     if (machineObservedProcess == null)
                     {
@@ -169,14 +172,14 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             }
         }
 
-        public ObservableDeleteStatus Delete(Guid observableId)
+        public async Task<ObservableDeleteStatus> Delete(Guid observableId)
         {
             
                 var dbContext = dbFactory.CreateDbContext();
                 using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
                 {
-                    Observable observable =
-                        unitOfWork.ObservableRepository.GetAll().SingleOrDefault(
+                    Observable observable = await
+                        unitOfWork.ObservableRepository.GetAll().SingleOrDefaultAsync(
                             l => l.UniqueId == observableId);
                     if (observable == null)
                     {

@@ -1,7 +1,8 @@
-using System;
 using SWI.SoftStock.ServerApps.WebApplicationContracts.ObservableService.GetAll;
 using SWI.SoftStock.ServerApps.WebApplicationContracts.Statuses;
 using SWI.SoftStock.ServerApps.WebApplicationModel;
+using System;
+using System.Threading.Tasks;
 
 namespace SWI.SoftStock.ServerApps.WebApplicationContracts
 {
@@ -9,7 +10,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationContracts
 	{
 		#region observable  query
 
-		ObservableModelEx GetObservableModelById(Guid observableId);
+		Task<ObservableModelEx> GetObservableModelById(Guid observableId);
 
 		GetAllResponse GetAll(GetAllRequest request);
 
@@ -17,13 +18,13 @@ namespace SWI.SoftStock.ServerApps.WebApplicationContracts
 
 		#region observable  caommand
 
-		Guid? Add(ObservableModelEx modelEx, Guid companyId, Guid createdByUserId, out ObservableCreationStatus status);
+		Task<Tuple<Guid?, ObservableCreationStatus>> Add(ObservableModelEx modelEx, Guid companyId, Guid createdByUserId);
 
-		Guid? Append(Guid observableId, Guid machineId, out ObservableAppendStatus status);
+        Task<Tuple<Guid?, ObservableAppendStatus>> Append(Guid observableId, Guid machineId);
 
-		ObservableRemoveStatus Remove(Guid machineId, Guid observableId);
+		Task<ObservableRemoveStatus> Remove(Guid machineId, Guid observableId);
 
-		ObservableDeleteStatus Delete(Guid observableId);
+		Task<ObservableDeleteStatus> Delete(Guid observableId);
 
 		#endregion
 	}

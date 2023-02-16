@@ -8,19 +8,18 @@ namespace SWI.SoftStock.ServerApps.WebApplicationContracts
 {
     public interface IStructureUnitService
 	{
-		#region structure unit query
+        #region structure unit query
 
-		StructureUnitModel GetByUniqueId(Guid uniqueId);
-		Guid? GetParentUniqueId(Guid uniqueId);
+        Task<StructureUnitModel> GetByUniqueId(Guid uniqueId);
+        Task<Guid?> GetParentUniqueId(Guid uniqueId);
 
-		IEnumerable<StructureUnitTreeItemModel> GetStructureUnitModels(Guid userId, Guid? selectedId, string[] roles,
-			out StructureUnitModel selectedStructureUnit);
+        Task<Tuple<IEnumerable<StructureUnitTreeItemModel>, StructureUnitModel>> GetStructureUnitModels(Guid userId, Guid? selectedId, string[] roles);
 
-		Tuple<int, Guid> GetCompanyIdByName(string companyName);
+        Task<Tuple<int, Guid>> GetCompanyIdByName(string companyName);
 
-		int GetIdByUniqueId(Guid structureUnitId);
+        Task<int> GetIdByUniqueId(Guid structureUnitId);
 
-		IEnumerable<Guid> GetStructureUnitsGuid(Guid userId, string[] roles);
+        Task<IEnumerable<Guid>> GetStructureUnitsGuid(Guid userId, string[] roles);
 
         Tuple<int, Guid> GetCompanyIdByStructureUnitId(Guid structureUnitId);
 
@@ -28,9 +27,9 @@ namespace SWI.SoftStock.ServerApps.WebApplicationContracts
 
         #region structure unit command
 
-        StructureUnitDeleteStatus DeleteByUniqueId(Guid uniqueId);
+        Task<StructureUnitDeleteStatus> DeleteByUniqueId(Guid uniqueId);
 
-		Guid? CreateAndAdd(StructureUnitModel model, Guid parentId, out StructureUnitCreationStatus status);
+		Task<Tuple<Guid?, StructureUnitCreationStatus>> CreateAndAdd(StructureUnitModel model, Guid parentId);
 
 		Task<StructureUnitUpdateStatus> Update(StructureUnitModel model);
 

@@ -113,10 +113,10 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
 
         [HttpDelete]
         [Route("{licenseId}/structureunit/{structureUnitId}")]
-        public IActionResult Delete(Guid licenseId, Guid structureUnitId)
+        public async Task<IActionResult> Delete(Guid licenseId, Guid structureUnitId)
         {
             // TODO CHECKING THE RIGHTS TO ACT WITH A LICENSE
-            var license = this.licenseService.GetLicenseModelExById(licenseId);
+            var license = await this.licenseService.GetLicenseModelExById(licenseId);
 
             if (license.StructureUnitId != structureUnitId)
             {
@@ -127,7 +127,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
                     structureUnitId);
                 return this.Ok(new { success = false, errors = new[] { "Cannot delete license." } });
             }
-            var status = this.licenseService.DeleteById(licenseId);
+            var status = await this.licenseService.DeleteById(licenseId);
 
             if (status != LicenseDeleteStatus.Success)
             {
@@ -155,9 +155,9 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
 
         [HttpGet]
         [Route("{fileid}/download")]
-        public FileResult Download(Guid fileid)
+        public async Task<FileResult> Download(Guid fileid)
         {
-            var document = this.licenseService.GetDocumentById(fileid);
+            var document = await this.licenseService.GetDocumentById(fileid);
             return this.File(document.Content, "application/octet-stream", document.Name);
         }
 
@@ -219,7 +219,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
 
         [HttpGet]
         [Route("{licenseId}/usage")]
-        public IActionResult LicenseUsage(
+        public async Task<IActionResult> LicenseUsage(
             Guid licenseId,
             [FromQuery] GetLicenseUsageRequest req,
             [FromQuery] PagingModel paging,
@@ -234,7 +234,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
                 Ordering = MapperFromViewToModel.MapToOrdering(ordering),
                 LicenseId = licenseId
             };
-            var response = this.licenseService.GetLicenseUsageList(request);
+            var response = await this.licenseService.GetLicenseUsageList(request);
 
             if (!req.ViewType.HasValue || req.ViewType.Value == 2)
             {
@@ -259,7 +259,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
                     });
             }
 
-            var response1 = this.licenseService.GetLicenseUsage(req);
+            var response1 = await this.licenseService.GetLicenseUsage(req);
             var data = this.GetLicenseUsageModel(response1);
             return this.Ok(data);
         }
@@ -272,7 +272,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
             [FromQuery] OrderingModel ordering,
             int status)
         {           
-            var suGuids = this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(UserId), new[] { "Manager" });
+            var suGuids = await this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(UserId), new[] { "Manager" });
 
             var request = new GetLicensedMachineRequest();
             request.Paging = MapperFromViewToModel.MapToPaging(paging);

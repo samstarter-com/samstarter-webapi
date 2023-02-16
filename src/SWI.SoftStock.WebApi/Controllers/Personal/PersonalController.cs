@@ -67,7 +67,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Personal
 
         [HttpGet]
         [Route("softwares")]
-        public IActionResult Softwares([FromQuery] string machineId, [FromQuery] PagingModel paging,
+        public async Task<IActionResult> Softwares([FromQuery] string machineId, [FromQuery] PagingModel paging,
             [FromQuery] OrderingModel ordering, int? filterType)
         {
             if (!filterType.HasValue)
@@ -102,7 +102,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Personal
                     Ordering = o
                 };
 
-                var response = this.softwareService.GetByMachineId(request);
+                var response = await this.softwareService.GetByMachineId(request);
 
                 result = new
                 {

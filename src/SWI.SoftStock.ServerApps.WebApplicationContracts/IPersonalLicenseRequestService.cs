@@ -12,7 +12,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationContracts
 		#region personal license request query
 
         Task<PersonalLicenseRequestModel> GetLicenseRequestModelByIdAsync(Guid licenseRequestId);
-		PersonalLicenseRequestDocumentModelEx GetDocumentById(Guid id);
+		Task<PersonalLicenseRequestDocumentModelEx> GetDocumentById(Guid id);
         Task<GetByUserIdResponse> GetByUserIdAsync(GetByUserIdRequest request);
 		Task<GetNewLicenseRequestCountResponse> GetNewLicenseRequestCount(GetNewLicenseRequestCountRequest request);
 
@@ -21,7 +21,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationContracts
 		#region personal license request command
 
 		Task ReceivedAsync(Guid id);
-		AnswerPersonalLicenseRequestStatus Answer(PersonalLicenseRequestAnswerModel model);
+		Task<AnswerPersonalLicenseRequestStatus> Answer(PersonalLicenseRequestAnswerModel model);
 
 		#endregion
 	}

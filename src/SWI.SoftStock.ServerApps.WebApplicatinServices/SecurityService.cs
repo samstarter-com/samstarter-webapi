@@ -77,7 +77,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                     return new RegisterCompanyResponse { Status = status };
                 }
 
-                var (companyId, structureUnitId) = structureUnitService.GetCompanyIdByName(model.CompanyName);
+                var (companyId, structureUnitId) = await structureUnitService.GetCompanyIdByName(model.CompanyName);
                 var userId = user.Id;
                 var setUsersRolesRequest = new SetUsersRolesRequest
                 {
@@ -94,7 +94,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                     log.LogWarning("UserService.SetUsersRoles return status:{0}", setUsersRolesResponse.Status);
                     return new RegisterCompanyResponse { Status = RegisterCompanyStatus.UnknownError };
                 }
-                var isSetCompanyAccount = SetCompanyAccount(companyId, request.AccountName);
+                var isSetCompanyAccount = await SetCompanyAccount(companyId, request.AccountName);
                 if (!isSetCompanyAccount)
                 {
                     log.LogWarning("Cannot set SetCompanyAccount");
@@ -213,7 +213,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return Tuple.Create(newUser, status);    
         }
 
-        private bool SetCompanyAccount(int companyId, string accountName)
+        private async Task<bool> SetCompanyAccount(int companyId, string accountName)
         {
             var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
@@ -222,8 +222,8 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             {
                 return false;
             }
-            var account =
-                unitOfWork.AccountRepository.GetAll().SingleOrDefault(a => a.Name == accountName && a.IsAvailable);
+            var account = await
+                unitOfWork.AccountRepository.GetAll().SingleOrDefaultAsync(a => a.Name == accountName && a.IsAvailable);
             if (account == null)
             {
                 return false;
@@ -263,20 +263,20 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             }
         }
 
-        public GetAccountResponse GetAccount(GetAccountRequest request)
+        public async Task<GetAccountResponse> GetAccount(GetAccountRequest request)
         {
             var result = new GetAccountResponse();
             var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
-            var isAdmin = unitOfWork.StructureUnitUserRoleRepository.GetAll()
-                .Any(sur => sur.UserUserId == request.UserId && sur.Role.Name == "Admin");
+            var isAdmin = await unitOfWork.StructureUnitUserRoleRepository.GetAll()
+                .AnyAsync(sur => sur.UserUserId == request.UserId && sur.Role.Name == "Admin");
             if (!isAdmin)
             {
                 result.Status = GetAccountStatus.IsNotAdmin;
             }
             var user = customUserManager.Users.Single(u => u.Id == request.UserId);
             var account = user.Company.Account;
-            var installedMachineCount = user.Company.CompanyMachines.Count();
+            var installedMachineCount = user.Company.CompanyMachines.Count;
             var model = MapperFromModelToView.MapToAccountModel(account, installedMachineCount);
             result.AccountModel = model;
             result.Status = GetAccountStatus.Success;

@@ -135,7 +135,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
-                var machine = unitOfWork.MachineRepository.GetAll().Single(m => m.UniqueId == machineId);
+                var machine = await unitOfWork.MachineRepository.GetAll().SingleAsync(m => m.UniqueId == machineId);
                 if (machine.CurrentLinkedStructureUnit != null &&
                     machine.CurrentLinkedStructureUnit.UniqueId == structureUnitId)
                 {
@@ -164,7 +164,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
-                var machine = unitOfWork.MachineRepository.GetAll().Single(m => m.UniqueId == machineId);
+                var machine = await unitOfWork.MachineRepository.GetAll().SingleAsync(m => m.UniqueId == machineId);
                 if (machine.CurrentUser != null && machine.CurrentUser.Id == userId)
                 {
                     // if machine is already linked to a user
@@ -194,7 +194,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             response.Model = new SoftwareMachineCollection(request.Ordering.Order, request.Ordering.Sort);
             var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
-            var software = unitOfWork.SoftwareRepository.GetAll().SingleOrDefault(s => s.UniqueId == request.SoftwareId);
+            var software = await unitOfWork.SoftwareRepository.GetAll().SingleOrDefaultAsync(s => s.UniqueId == request.SoftwareId);
             if (software == null)
             {
                 response.Status = GetBySoftwareIdStatus.SoftwareNotFound;
@@ -244,7 +244,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return response;
         }
 
-        public GetByObservableIdResponse GetByObservableId(GetByObservableIdRequest request)
+        public async Task<GetByObservableIdResponse> GetByObservableId(GetByObservableIdRequest request)
         {
             GetByObservableIdResponse response = new GetByObservableIdResponse
             {
@@ -252,13 +252,13 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             };
             var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
-            var observable =
-                unitOfWork.ObservableRepository.GetAll().Single(m => m.UniqueId == request.ObservableId);
+            var observable = await
+                unitOfWork.ObservableRepository.GetAll().SingleAsync(m => m.UniqueId == request.ObservableId);
             var query = unitOfWork.MachineObservedProcessRepository.GetAll().Where(mop => mop.ObservableId == observable.Id).
                 Select(ms => ms.Machine);
-            var totalRecords = query.Count();
+            var totalRecords = await query.CountAsync();
             var keySelector = GetByStructureUnitIdMachineOrderingSelector(request.Ordering.Sort);
-            IEnumerable<Machine> machines;
+            IQueryable<Machine> machines;
             if (string.IsNullOrEmpty(request.Ordering.Order) || request.Ordering.Order.ToLower() != "desc")
             {
                 machines = query.OrderBy(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
@@ -269,19 +269,19 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                     query.OrderByDescending(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
             }
 
-            MachineModel[] items = machines.Select(MapperFromModelToView.MapToMachineModel<MachineModel>).ToArray();
+            MachineModel[] items = (await machines.ToArrayAsync()).Select(MapperFromModelToView.MapToMachineModel<MachineModel>).ToArray();
             response.Model.Items = items;
             response.Model.TotalRecords = totalRecords;
             response.Status = GetByObservableIdStatus.Success;
             return response;
         }
 
-        public MachineDeleteStatus Delete(Guid machineId)
+        public async Task<MachineDeleteStatus> Delete(Guid machineId)
         {
             var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
-                Machine machine = unitOfWork.MachineRepository.GetAll().Single(m => m.UniqueId == machineId);
+                Machine machine = await unitOfWork.MachineRepository.GetAll().SingleAsync(m => m.UniqueId == machineId);
                 if (machine == null)
                 {
                     return MachineDeleteStatus.NotExist;
@@ -294,13 +294,13 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return MachineDeleteStatus.Success;
         }
 
-        public GetStructureUnitIdResponse GetStructureUnitId(GetStructureUnitIdRequest request)
+        public async Task<GetStructureUnitIdResponse> GetStructureUnitId(GetStructureUnitIdRequest request)
         {
             GetStructureUnitIdResponse response = new GetStructureUnitIdResponse();
             var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
-            Machine machine =
-                unitOfWork.MachineRepository.GetAll().SingleOrDefault(m => m.UniqueId == request.MachineId);
+            Machine machine = await
+                unitOfWork.MachineRepository.GetAll().SingleOrDefaultAsync(m => m.UniqueId == request.MachineId);
             if (machine == null)
             {
                 response.Status = GetStructureUnitIdStatus.MachineNotFound;
@@ -316,12 +316,12 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return response;
         }
 
-        public MachineDisableStatus Disable(Guid machineId)
+        public async Task<MachineDisableStatus> Disable(Guid machineId)
         {
             var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
-                Machine machine = unitOfWork.MachineRepository.GetAll().Single(m => m.UniqueId == machineId);
+                Machine machine = await unitOfWork.MachineRepository.GetAll().SingleAsync(m => m.UniqueId == machineId);
                 if (machine == null)
                 {
                     return MachineDisableStatus.NotExist;
@@ -333,12 +333,12 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return MachineDisableStatus.Success;
         }
 
-        public MachineEnableStatus Enable(Guid machineId)
+        public async Task<MachineEnableStatus> Enable(Guid machineId)
         {
             var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
-                Machine machine = unitOfWork.MachineRepository.GetAll().Single(m => m.UniqueId == machineId);
+                Machine machine = await unitOfWork.MachineRepository.GetAll().SingleAsync(m => m.UniqueId == machineId);
                 if (machine == null)
                 {
                     return MachineEnableStatus.NotExist;

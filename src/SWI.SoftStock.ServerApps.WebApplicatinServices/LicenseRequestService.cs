@@ -34,12 +34,12 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         #region ILicenseRequestService Members
 
-        public NewLicenseRequestResponse GetNewLicenseRequest(NewLicenseRequestRequest request)
+        public async Task<NewLicenseRequestResponse> GetNewLicenseRequest(NewLicenseRequestRequest request)
         {
             var result = new NewLicenseRequestResponse();
             var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
-            Machine machine = unitOfWork.MachineRepository.GetAll().SingleOrDefault(l => l.UniqueId == request.MachineId);
+            Machine machine = await unitOfWork.MachineRepository.GetAll().SingleOrDefaultAsync(l => l.UniqueId == request.MachineId);
             if (machine == null)
             {
                 result.Status = NewLicenseRequestStatus.MachineNotFound;
@@ -52,7 +52,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 return result;
             }
 
-            Software software = unitOfWork.SoftwareRepository.GetAll().SingleOrDefault(l => l.UniqueId == request.SoftwareId);
+            Software software = await unitOfWork.SoftwareRepository.GetAll().SingleOrDefaultAsync(l => l.UniqueId == request.SoftwareId);
             if (software == null)
             {
                 result.Status = NewLicenseRequestStatus.SoftwareNotFound;
@@ -91,14 +91,15 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return result;
         }
 
-        public Guid? Add(NewLicenseRequestModel model, Guid managerId, bool sending, out SaveLicenseRequestStatus status)
+        public async Task<Tuple<Guid?, SaveLicenseRequestStatus>> Add(NewLicenseRequestModel model, Guid managerId, bool sending)
         {
             LicenseRequest licenseRequest;
+            SaveLicenseRequestStatus status;
             var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 Machine machine =
-                    unitOfWork.MachineRepository.GetAll().SingleOrDefault(l => l.UniqueId == model.MachineId);
+                    await unitOfWork.MachineRepository.GetAll().SingleOrDefaultAsync(l => l.UniqueId == model.MachineId);
                 if (machine == null)
                 {
                     status = SaveLicenseRequestStatus.MachineNotFound;
@@ -112,7 +113,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 }
 
                 Software software =
-                    unitOfWork.SoftwareRepository.GetAll().SingleOrDefault(l => l.UniqueId == model.SoftwareId);
+                    await unitOfWork.SoftwareRepository.GetAll().SingleOrDefaultAsync(l => l.UniqueId == model.SoftwareId);
                 if (software == null)
                 {
                     status = SaveLicenseRequestStatus.SoftwareNotFound;
@@ -154,7 +155,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 unitOfWork.Save();
             }
             status = SaveLicenseRequestStatus.Success;
-            return licenseRequest.UniqueId;
+            return new Tuple<Guid?, SaveLicenseRequestStatus>(licenseRequest.UniqueId, status);
         }
 
         public async Task<LicenseRequestModel> GetLicenseRequestModelByIdAsync(Guid licenseRequestId)
@@ -256,12 +257,12 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return response;
         }
 
-        public UpdateLicenseRequestStatus Update(LicenseRequestModel model, bool sending)
+        public async Task<UpdateLicenseRequestStatus> Update(LicenseRequestModel model, bool sending)
         {
             var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             LicenseRequest licenseRequest =
-                unitOfWork.LicenseRequestRepository.GetAll().SingleOrDefault(
+                await unitOfWork.LicenseRequestRepository.GetAll().SingleOrDefaultAsync(
                     l => l.UniqueId == model.LicenseRequestId);
             bool changed = false;
             if (licenseRequest == null)
@@ -300,21 +301,21 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return UpdateLicenseRequestStatus.Success;
         }
 
-        public LicenseRequestDocumentModelEx GetDocumentById(Guid id)
+        public async Task<LicenseRequestDocumentModelEx> GetDocumentById(Guid id)
         {
             var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             LicenseRequestDocument doc =
-                unitOfWork.LicenseRequestDocumentRepository.GetAll().Single(d => d.UniqueId == id);
+                await unitOfWork.LicenseRequestDocumentRepository.GetAll().SingleAsync(d => d.UniqueId == id);
             return MapperFromModelToView.MapToLicenseRequestDocumentModelEx(doc);
         }
 
-        public SendLicenseRequestStatus SendToUser(Guid licenseRequestId)
+        public async Task<SendLicenseRequestStatus> SendToUser(Guid licenseRequestId)
         {
             var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             LicenseRequest licenseRequest =
-                unitOfWork.LicenseRequestRepository.GetAll().SingleOrDefault(l => l.UniqueId == licenseRequestId);
+                await unitOfWork.LicenseRequestRepository.GetAll().SingleOrDefaultAsync(l => l.UniqueId == licenseRequestId);
             if (licenseRequest == null)
             {
                 return SendLicenseRequestStatus.NotExist;
@@ -347,7 +348,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 var licenseRequest =
-                    unitOfWork.LicenseRequestRepository.GetAll().SingleOrDefault(l => l.UniqueId == request.LicenseRequestId);
+                    await unitOfWork.LicenseRequestRepository.GetAll().SingleOrDefaultAsync(l => l.UniqueId == request.LicenseRequestId);
                 if (licenseRequest == null)
                 {
                     response.Status = CreateLicenseBasedOnLicenseRequestStatus.NotExist;
@@ -398,13 +399,13 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             await unitOfWork.SaveAsync();
         }
 
-        public ArchiveLicenseRequestStatus Archive(Guid licenseRequestId)
+        public async Task<ArchiveLicenseRequestStatus> Archive(Guid licenseRequestId)
         {
             var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 LicenseRequest licenseRequest =
-                    unitOfWork.LicenseRequestRepository.GetAll().Single(l => l.UniqueId == licenseRequestId);
+                    await unitOfWork.LicenseRequestRepository.GetAll().SingleAsync(l => l.UniqueId == licenseRequestId);
                 if (licenseRequest != null)
                 {
                     licenseRequest.CurrentStatus = LicenseRequestStatus.Archived;
@@ -426,7 +427,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             var response = new GetNewLicenseRequestCountResponse();
             var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
-            int totalRecords = unitOfWork.LicenseRequestRepository.GetAll().Count(l => l.UserUserId1 == request.UserId && l.CurrentStatus == LicenseRequestStatus.SentToManager);
+            int totalRecords = await unitOfWork.LicenseRequestRepository.GetAll().CountAsync(l => l.UserUserId1 == request.UserId && l.CurrentStatus == LicenseRequestStatus.SentToManager);
             response.Status = GetNewLicenseRequestCountStatus.Success;
             response.Count = totalRecords;
             return response;

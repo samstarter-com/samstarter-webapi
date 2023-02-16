@@ -1,11 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using SWI.SoftStock.ServerApps.DataModel2.Identity;
 using SWI.SoftStock.ServerApps.WebApplicationContracts;
 using SWI.SoftStock.ServerApps.WebApplicationModel;
-using System;
 using SWI.SoftStock.WebApi.Common;
+using System;
+using System.Threading.Tasks;
 
 namespace SWI.SoftStock.WebApi.Controllers.Management
 {
@@ -30,21 +31,20 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
         [Authorize(Roles = "Admin, Manager")]
         [Route("")]
         [HttpGet]
-        public IActionResult StructureUnits([FromQuery] StructureUnitsRequestModel request)
+        public async Task<IActionResult> StructureUnits([FromQuery] StructureUnitsRequestModel request)
         {
             const string role = "Manager";
 
             var parsed = Guid.TryParse(request.SelectedStructureUnitId, out var uniqueId);
                        
 
-            var tree = this.structureUnitService.GetStructureUnitModels(Guid.Parse(UserId),
+            var res = await this.structureUnitService.GetStructureUnitModels(Guid.Parse(UserId),
                 parsed
-                    ? (Guid?)
+                    ?
                         uniqueId
                     : null,
-                new[] { role },
-                out var selectedStructureUnit);
-            return this.Ok(tree);
+                new[] { role });
+            return this.Ok(res.Item1);
         }
     }
 }

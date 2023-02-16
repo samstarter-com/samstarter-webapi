@@ -80,9 +80,9 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
 
         [HttpGet]
         [Route("newlicense")]
-        public IActionResult GetNewLicenseRequest([FromQuery] Guid machineId, [FromQuery] Guid softwareId)
+        public async Task<IActionResult> GetNewLicenseRequest([FromQuery] Guid machineId, [FromQuery] Guid softwareId)
         {
-            var newLicenseRequestResponse = this.licenseRequestService.GetNewLicenseRequest(new NewLicenseRequestRequest
+            var newLicenseRequestResponse = await this.licenseRequestService.GetNewLicenseRequest(new NewLicenseRequestRequest
             {
                 MachineId = machineId,
                 SoftwareId = softwareId
@@ -107,7 +107,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
 
         [HttpPost]
         [Route("")]
-        public IActionResult SaveLicenseRequest(NewLicenseRequestModel model)
+        public async Task<IActionResult> SaveLicenseRequest(NewLicenseRequestModel model)
         {
             if (!this.ModelState.IsValid)
             {
@@ -118,10 +118,11 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
                     
             var userId = Guid.Parse(UserId);
 
-            var licenseRequestId = this.licenseRequestService.Add(model,
+            var res = await this.licenseRequestService.Add(model,
                 userId,
-                model.Sending,
-                out SaveLicenseRequestStatus status);
+                model.Sending);
+            var licenseRequestId = res.Item1;
+            var status = res.Item2;
             var message = SaveLicenseRequestStatusEn.GetErrorMessage(status);
             switch (status)
             {
@@ -152,9 +153,9 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
 
         [HttpPost]
         [Route("archive/{licenseRequestId}")]
-        public IActionResult ArchivePost(Guid licenseRequestId)
+        public async Task<IActionResult> ArchivePost(Guid licenseRequestId)
         {
-            var status = this.licenseRequestService.Archive(licenseRequestId);
+            var status = await this.licenseRequestService.Archive(licenseRequestId);
             var message = ArchiveLicenseRequestStatusEn.GetErrorMessage(status);
             switch (status)
             {
@@ -176,9 +177,9 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
 
         [HttpPost]
         [Route("send/{licenseRequestId}")]
-        public IActionResult SendPost(Guid licenseRequestId)
+        public async Task<IActionResult> SendPost(Guid licenseRequestId)
         {
-            var status = this.licenseRequestService.SendToUser(licenseRequestId);
+            var status = await this.licenseRequestService.SendToUser(licenseRequestId);
             var message = SendLicenseRequestStatusEn.GetErrorMessage(status);
             switch (status)
             {
@@ -200,9 +201,9 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
 
         [HttpGet]
         [Route("{fileid}/download")]
-        public FileResult Download(Guid fileid)
+        public async Task<FileResult> Download(Guid fileid)
         {
-            var document = this.licenseRequestService.GetDocumentById(fileid);
+            var document = await this.licenseRequestService.GetDocumentById(fileid);
             return this.File(document.Content, "application/octet-stream", document.Name);
         }
 

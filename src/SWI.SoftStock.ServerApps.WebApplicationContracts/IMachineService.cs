@@ -16,8 +16,8 @@ namespace SWI.SoftStock.ServerApps.WebApplicationContracts
         Task<MachineModelEx> GetByIdAsync(Guid uniqueId);
         Task<GetByStructureUnitIdResponse> GetByStructureUnitIdAsync(GetByStructureUnitIdRequest request);
         Task<GetBySoftwareIdResponse> GetBySoftwareIdAsync(GetBySoftwareIdRequest request);
-        GetStructureUnitIdResponse GetStructureUnitId(GetStructureUnitIdRequest request);
-        GetByObservableIdResponse GetByObservableId(GetByObservableIdRequest request);
+        Task<GetStructureUnitIdResponse> GetStructureUnitId(GetStructureUnitIdRequest request);
+        Task<GetByObservableIdResponse> GetByObservableId(GetByObservableIdRequest request);
 
         #endregion
 
@@ -25,9 +25,9 @@ namespace SWI.SoftStock.ServerApps.WebApplicationContracts
 
         Task<MachineLinkToStructureUnitStatus> LinkToStructureUnitAsync(Guid machineId, Guid structureUnitId);
         Task<MachineLinkToUserStatus> LinkToUserAsync(Guid machineId, Guid userId);
-        MachineDeleteStatus Delete(Guid machineId);
-        MachineDisableStatus Disable(Guid machineId);
-        MachineEnableStatus Enable(Guid machineId);
+        Task<MachineDeleteStatus> Delete(Guid machineId);
+        Task<MachineDisableStatus> Disable(Guid machineId);
+        Task<MachineEnableStatus> Enable(Guid machineId);
 
         #endregion
     }

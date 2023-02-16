@@ -16,11 +16,11 @@ namespace SWI.SoftStock.ServerApps.WebApplicationContracts
 
 		UserModelEx GetById(Guid userId);
 
-		IEnumerable<UserRoleModel> GetUserRoles(Guid structureUnitId, Guid userId);
+        Task<IEnumerable<UserRoleModel>> GetUserRoles(Guid structureUnitId, Guid userId);
 
 		Task<IEnumerable<StructureUnitRoleSimpleModel>> GetUserStructureUnitRolesAsync(Guid userId);
 
-		IEnumerable<UserRoleSimpleModel> GetStructureUnitUserRoles(Guid structureUnitId);
+        Task<IEnumerable<UserRoleSimpleModel>> GetStructureUnitUserRoles(Guid structureUnitId);
 
         Task<IEnumerable<UserModel>> GetForAutocompleteAsync(Guid value, string request);
 

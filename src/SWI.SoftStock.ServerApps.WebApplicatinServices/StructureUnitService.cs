@@ -36,25 +36,25 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return new Tuple<int, Guid>(company.Id, company.UniqueId);
         }
 
-        public StructureUnitModel GetByUniqueId(Guid uniqueId)
+        public async Task<StructureUnitModel> GetByUniqueId(Guid uniqueId)
         {
             var dbContext = dbFactory.CreateDbContext();
 
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
-            var structureUnit =
-                unitOfWork.StructureUnitRepository.GetAll().SingleOrDefault(su => su.UniqueId == uniqueId);
+            var structureUnit = await
+                unitOfWork.StructureUnitRepository.GetAll().SingleOrDefaultAsync(su => su.UniqueId == uniqueId);
 
             return structureUnit != null
                 ? MapperFromModelToView.MapToStructureModel(structureUnit)
                 : null;
         }
 
-        public StructureUnitDeleteStatus DeleteByUniqueId(Guid uniqueId)
+        public async Task<StructureUnitDeleteStatus> DeleteByUniqueId(Guid uniqueId)
         {
             var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
-            StructureUnit structureUnit =
-                unitOfWork.StructureUnitRepository.GetAll().SingleOrDefault(
+            StructureUnit structureUnit = await
+                unitOfWork.StructureUnitRepository.GetAll().SingleOrDefaultAsync(
                     su => su.UniqueId == uniqueId);
 
             StructureUnitDeleteStatus status = CheckBeforeDelete(structureUnit);
@@ -76,14 +76,14 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return status;
         }
 
-        public Guid? GetParentUniqueId(Guid uniqueId)
+        public async Task<Guid?> GetParentUniqueId(Guid uniqueId)
         {
             Guid? result = null;
             var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
-                StructureUnit structureUnit =
-                    unitOfWork.StructureUnitRepository.GetAll().Include(su => su.ParentStructureUnit).SingleOrDefault(
+                StructureUnit structureUnit = await
+                    unitOfWork.StructureUnitRepository.GetAll().Include(su => su.ParentStructureUnit).SingleOrDefaultAsync(
                         su => su.UniqueId == uniqueId);
                 if (structureUnit != null && structureUnit.ParentStructureUnit != null)
                 {
@@ -100,15 +100,17 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         /// <param name="parentId"></param>
         /// <param name="status"></param>
         /// <returns></returns>
-        public Guid? CreateAndAdd(StructureUnitModel model, Guid parentId, out StructureUnitCreationStatus status)
+        public async Task<Tuple<Guid?, StructureUnitCreationStatus>> CreateAndAdd(StructureUnitModel model, Guid parentId)
         {
+            StructureUnitCreationStatus status;
             try
             {
-                StructureUnit structureUnit = Create(model, parentId, out status);
-                if (status == StructureUnitCreationStatus.Success)
+                var res = await Create(model, parentId);
+                StructureUnit structureUnit = res.Item1;
+                if (res.Item2 == StructureUnitCreationStatus.Success)
                 {
                     Add(structureUnit);
-                    return structureUnit.UniqueId;
+                    return new Tuple<Guid?, StructureUnitCreationStatus>(structureUnit.UniqueId, res.Item2);
                 }
                 return null;
             }
@@ -116,7 +118,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             {
                 log.LogError("Error in StructureUnitService.CreateAndAdd:{0}", e);
                 status = StructureUnitCreationStatus.RunTime;
-                return null;
+                return new Tuple<Guid?, StructureUnitCreationStatus>(null, status);
             }
         }
 
@@ -124,8 +126,8 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         {
             var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
-            var existingStructureUnit =
-                unitOfWork.StructureUnitRepository.GetAll().SingleOrDefault(su => su.UniqueId == newStructureUnit.UniqueId);
+            var existingStructureUnit = await
+                unitOfWork.StructureUnitRepository.GetAll().SingleOrDefaultAsync(su => su.UniqueId == newStructureUnit.UniqueId);
             if (existingStructureUnit == null)
             {
                 return StructureUnitUpdateStatus.NotExist;
@@ -143,8 +145,8 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
                 if (newStructureUnit.ParentUniqueId.HasValue)
                 {
-                    var newParentStructureUnit = unitOfWork.StructureUnitRepository.GetAll()
-                        .Single(su => su.UniqueId == newStructureUnit.ParentUniqueId);
+                    var newParentStructureUnit = await unitOfWork.StructureUnitRepository.GetAll()
+                        .SingleAsync(su => su.UniqueId == newStructureUnit.ParentUniqueId);
                     if (existingStructureUnit.StructureUnitId.HasValue &&
                         existingStructureUnit.StructureUnitId.Value != newParentStructureUnit.Id)
                     {
@@ -161,7 +163,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                     }
                 }
 
-                if (!IsUnique(existingStructureUnit))
+                if (!await IsUnique(existingStructureUnit))
                 {
                     return StructureUnitUpdateStatus.NonUnique;
                 }
@@ -176,23 +178,22 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return StructureUnitUpdateStatus.Success;
         }
 
-        public IEnumerable<StructureUnitTreeItemModel> GetStructureUnitModels(Guid userId,
+        public async Task<Tuple<IEnumerable<StructureUnitTreeItemModel>, StructureUnitModel>> GetStructureUnitModels(Guid userId,
             Guid? selectedId,
-            string[] roles,
-            out StructureUnitModel
-                selectedStructureUnit)
+            string[] roles)
         {
+            StructureUnitModel selectedStructureUnit;
             IList<StructureUnitTreeItemModel> result = new List<StructureUnitTreeItemModel>();
             var dbContext = dbFactory.CreateDbContext();
             selectedStructureUnit = null;
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
-                var surs = unitOfWork.StructureUnitUserRoleRepository.GetAll()
+                var surs = await unitOfWork.StructureUnitUserRoleRepository.GetAll()
                     .Include(sur => sur.Role)
                     .Include(sur => sur.StructureUnit)
                     .Include(sur => sur.StructureUnit.ChildStructureUnits)
                     .Where(sur => sur.UserUserId == userId && roles.Contains(sur.Role.Name)).Select(
-                        sur => sur.StructureUnit);
+                        sur => sur.StructureUnit).ToArrayAsync();
 
                 foreach (var structureUnit in surs)
                 {
@@ -225,42 +226,42 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                     result.Remove(tr);
                 }
             }
-            return result;
+            return new Tuple<IEnumerable<StructureUnitTreeItemModel>, StructureUnitModel>(result, selectedStructureUnit);
         }
 
-        public Tuple<int, Guid> GetCompanyIdByName(string companyName)
+        public async Task<Tuple<int, Guid>> GetCompanyIdByName(string companyName)
         {
             var dbContext = dbFactory.CreateDbContext();
 
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
-            StructureUnit company = unitOfWork.StructureUnitRepository.GetAll()
-                .Single(c => c.UnitType == UnitType.Company && c.Name == companyName);
+            StructureUnit company = await unitOfWork.StructureUnitRepository.GetAll()
+                .SingleAsync(c => c.UnitType == UnitType.Company && c.Name == companyName);
             return new Tuple<int, Guid>(company.Id, company.UniqueId);
         }
 
-        public int GetIdByUniqueId(Guid structureUnitId)
+        public async Task<int> GetIdByUniqueId(Guid structureUnitId)
         {
             var dbContext = dbFactory.CreateDbContext();
 
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
-            StructureUnit su = unitOfWork.StructureUnitRepository.GetAll()
-                .Single(c => c.UniqueId == structureUnitId);
+            StructureUnit su = await unitOfWork.StructureUnitRepository.GetAll()
+                .SingleAsync(c => c.UniqueId == structureUnitId);
             return su.Id;
         }
 
-        public IEnumerable<Guid> GetStructureUnitsGuid(Guid userId, string[] roles)
+        public async Task<IEnumerable<Guid>> GetStructureUnitsGuid(Guid userId, string[] roles)
         {
             IList<Guid> result = new List<Guid>();
             var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 {
-                    IQueryable<StructureUnit> surs = unitOfWork.StructureUnitUserRoleRepository.GetAll()
+                    var surs = await unitOfWork.StructureUnitUserRoleRepository.GetAll()
                         .Include(sur => sur.Role)
                         .Include(sur => sur.StructureUnit)
                         .Include(sur => sur.StructureUnit.ChildStructureUnits)
                         .Where(sur => sur.UserUserId == userId && roles.Contains(sur.Role.Name)).Select(
-                            sur => sur.StructureUnit);
+                            sur => sur.StructureUnit).ToArrayAsync();
                     foreach (StructureUnit structureUnit in surs)
                     {
                         List<StructureUnit> childStructureUnits = structureUnit.Descendants(sud => sud.ChildStructureUnits).ToList();
@@ -305,8 +306,9 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             unitOfWork.Save();
         }
 
-        private StructureUnit Create(StructureUnitModel model, Guid parentId, out StructureUnitCreationStatus status)
+        private async Task<Tuple<StructureUnit, StructureUnitCreationStatus>> Create(StructureUnitModel model, Guid parentId)
         {
+            StructureUnitCreationStatus status;
             var structureUnit = new StructureUnit
             {
                 Name = model.Name,
@@ -320,8 +322,8 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
-                parent =
-                    unitOfWork.StructureUnitRepository.GetAll().SingleOrDefault(su => su.UniqueId == parentId);
+                parent = await
+                    unitOfWork.StructureUnitRepository.GetAll().SingleOrDefaultAsync(su => su.UniqueId == parentId);
             }
 
             if (parent != null)
@@ -332,11 +334,11 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             {
                 status = StructureUnitCreationStatus.ParentNotFound;
             }
-            if (!IsUnique(structureUnit))
+            if (!await IsUnique(structureUnit))
             {
                 status = StructureUnitCreationStatus.NonUnique;
             }
-            return structureUnit;
+            return new Tuple<StructureUnit, StructureUnitCreationStatus>(structureUnit, status);
         }
 
         private IEnumerable<StructureUnitTreeItemModel> GetChildUnits(IEnumerable<StructureUnit> structureUnits,
@@ -373,13 +375,13 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         /// </summary>
         /// <param name="structureUnit"></param>
         /// <returns></returns>
-        private bool IsUnique(StructureUnit structureUnit)
+        private async Task<bool> IsUnique(StructureUnit structureUnit)
         {
             var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
-            StructureUnit existStructureUnit =
+            StructureUnit existStructureUnit = await
                 unitOfWork.StructureUnitRepository.GetAll().
-                    Include(su => su.ParentStructureUnit).SingleOrDefault(
+                    Include(su => su.ParentStructureUnit).SingleOrDefaultAsync(
                         su => su.Name == structureUnit.Name && su.UniqueId != structureUnit.UniqueId);
             if (existStructureUnit == null)
             {
@@ -388,9 +390,9 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             Guid existCompanyUniqueId =
                 existStructureUnit.Ancestors(false, su => su.ParentStructureUnit).Single(
                     psu => psu.UnitType == UnitType.Company).UniqueId;
-            StructureUnit parentStructureUnit =
+            StructureUnit parentStructureUnit = await
                 unitOfWork.StructureUnitRepository.GetAll().
-                    Include(su => su.ParentStructureUnit).Single(su => su.Id == structureUnit.StructureUnitId);
+                    Include(su => su.ParentStructureUnit).SingleAsync(su => su.Id == structureUnit.StructureUnitId);
             Guid parentCompanyUniqueId =
                 parentStructureUnit.Ancestors(true, su => su.ParentStructureUnit).Single(
                     psu => psu.UnitType == UnitType.Company).UniqueId;

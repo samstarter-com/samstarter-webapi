@@ -87,7 +87,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             var response = new GetNewLicenseRequestCountResponse();
             var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
-            int totalRecords = unitOfWork.LicenseRequestRepository.GetAll().Count(l => l.UserUserId == request.UserId && l.CurrentStatus == LicenseRequestStatus.SentToUser);
+            int totalRecords = await unitOfWork.LicenseRequestRepository.GetAll().CountAsync(l => l.UserUserId == request.UserId && l.CurrentStatus == LicenseRequestStatus.SentToUser);
             response.Status = GetNewLicenseRequestCountStatus.Success;
             response.Count = totalRecords;
             return response;
@@ -121,12 +121,12 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             await unitOfWork.SaveAsync();
         }
 
-        public AnswerPersonalLicenseRequestStatus Answer(PersonalLicenseRequestAnswerModel model)
+        public async Task<AnswerPersonalLicenseRequestStatus> Answer(PersonalLicenseRequestAnswerModel model)
         {
             var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
-            var licenseRequest =
-                unitOfWork.LicenseRequestRepository.GetAll().SingleOrDefault(
+            var licenseRequest = await
+                unitOfWork.LicenseRequestRepository.GetAll().SingleOrDefaultAsync(
                     l => l.UniqueId == model.LicenseRequestId);
             if (licenseRequest == null)
             {
@@ -172,11 +172,11 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return AnswerPersonalLicenseRequestStatus.Success;
         }
 
-        public PersonalLicenseRequestDocumentModelEx GetDocumentById(Guid id)
+        public async Task<PersonalLicenseRequestDocumentModelEx> GetDocumentById(Guid id)
         {
             var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
-            LicenseRequestDocument doc = unitOfWork.LicenseRequestDocumentRepository.GetAll().Single(d => d.UniqueId == id);
+            LicenseRequestDocument doc = await unitOfWork.LicenseRequestDocumentRepository.GetAll().SingleAsync(d => d.UniqueId == id);
             return MapperFromModelToView.MapToPersonalLicenseRequestDocumentModelEx(doc);
         }
 

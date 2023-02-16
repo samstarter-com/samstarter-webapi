@@ -37,14 +37,14 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
 
         [HttpPost]
         [Route("{licenseId}/licensemachine/{machineId}")]
-        public IActionResult LicenseMachine(Guid licenseId, Guid machineId)
+        public async Task<IActionResult> LicenseMachine(Guid licenseId, Guid machineId)
         {
             var request = new LicenseMachineRequest
             {
                 MachineId = machineId,
                 LicenseId = licenseId
             };
-            var response = this.licensingService.LicenseMachine(request);
+            var response = await this.licensingService.LicenseMachine(request);
 
             if (response.Status != LicenseMachineStatus.Success)
             {
@@ -60,14 +60,14 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
 
         [HttpPost]
         [Route("{licenseId}/unlicensemachine/{machineId}")]
-        public IActionResult UnLicenseMachine(Guid licenseId, Guid machineId)
+        public async Task<IActionResult> UnLicenseMachine(Guid licenseId, Guid machineId)
         {
             var request = new UnLicenseMachineRequest
             {
                 LicenseId = licenseId,
                 MachineId = machineId
             };
-            var response = this.licensingService.UnLicenseMachine(request);
+            var response = await this.licensingService.UnLicenseMachine(request);
 
             if (response.Status != UnLicenseMachineStatus.Success)
             {
@@ -86,7 +86,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
         [Route("{licenseId}/licensemachines")]
         public async Task<IActionResult> LicenseMachines(Guid licenseId)
         {           
-            var suGuids = this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(UserId), new[] { "Manager" });
+            var suGuids = await this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(UserId), new[] { "Manager" });
 
             var request = new LicenseMachinesRequest
             {
@@ -111,7 +111,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
         [Route("{licenseId}/unlicensemachines")]
         public async Task<IActionResult> UnLicenseMachines(Guid licenseId)
         {         
-            var suGuids = this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(UserId), new[] { "Manager" });
+            var suGuids = await this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(UserId), new[] { "Manager" });
 
             var request = new UnLicenseMachinesRequest
             {
@@ -136,7 +136,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
         [Route("{machineId}/licenselicenses")]
         public async Task<IActionResult> LicenseLicenses(Guid machineId)
         {            
-            var suGuids = this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(UserId), new[] { "Manager" });
+            var suGuids = await this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(UserId), new[] { "Manager" });
 
             var request = new LicenseLicenseRequest
             {
@@ -160,7 +160,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
         [Route("{machineId}/unlicenselicenses")]
         public async Task<IActionResult> UnLicenseLicenses(Guid machineId)
         {            
-            var suGuids = this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(UserId), new[] { "Manager" });
+            var suGuids = await this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(UserId), new[] { "Manager" });
 
             var request = new UnLicenseLicensesRequest
             {

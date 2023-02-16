@@ -72,7 +72,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             var userRole = await rolemanager.FindByNameAsync("User");
             Guid userRoleId = userRole.Id;
-            StructureUnit structureUnit = unitOfWork.StructureUnitRepository.GetAll().Single(s => s.UniqueId == request.StructureUnitId);
+            StructureUnit structureUnit = await unitOfWork.StructureUnitRepository.GetAll().SingleAsync(s => s.UniqueId == request.StructureUnitId);
             IQueryable<User> query;
             if (!request.IncludeItemsOfSubUnits)
             {
@@ -91,17 +91,17 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                         Where(suur => structureUnitIds.Contains(suur.StructureUnitId)).Select(suur => suur.User);
             }
 
-            int totalRecords = query.Count();
+            int totalRecords = await query.CountAsync();
             var keySelector = GetByStructureUnitIdOrderingSelecetor(request.Ordering.Sort);
             IEnumerable<User> users;
             if (string.IsNullOrEmpty(request.Ordering.Order) || request.Ordering.Order.ToLower() != "desc")
             {
-                users = query.OrderBy(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
+                users = await query.OrderBy(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize).ToArrayAsync();
             }
             else
             {
-                users =
-                    query.OrderByDescending(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
+                users = await
+                    query.OrderByDescending(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize).ToArrayAsync();
             }
             UserModelEx[] items = users.Select(MapperFromModelToView.MapToUserModelEx).ToArray();
             response.Model.Items = items;
@@ -150,7 +150,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             //}
         }
 
-        public IEnumerable<UserRoleModel> GetUserRoles(Guid structureUnitId, Guid userId)
+        public async Task<IEnumerable<UserRoleModel>> GetUserRoles(Guid structureUnitId, Guid userId)
         {
             var result = new List<UserRoleModel>();
             var dbContext = dbFactory.CreateDbContext();
@@ -159,10 +159,10 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 IOrderedEnumerable<CustomRole> roles =
                     rolemanager.Roles.Where(r => r.Name != "User").ToArray().
                         OrderBy(r => r.Name);
-                Guid[] availableRoles =
+                Guid[] availableRoles = await
                     unitOfWork.StructureUnitUserRoleRepository.GetAll().Where(
                         suur => suur.UserUserId == userId && suur.StructureUnit.UniqueId == structureUnitId).Select(
-                            suur => suur.RoleRoleId).ToArray();
+                            suur => suur.RoleRoleId).ToArrayAsync();
 
                 var userRoleModels = roles.Select(r => new UserRoleModel
                 {
@@ -186,12 +186,12 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             {
                 var userRoleId = await rolemanager.Roles.Where(r => r.Name == "User").Select(r => r.Id).SingleAsync();
 
-                var availableRoles =
+                var availableRoles = await
                     unitOfWork.StructureUnitUserRoleRepository.GetAll()
                         .Where(suur => suur.UserUserId == userId
                                        //&& suur.RoleRoleId != userRoleId
                                        )
-                        .ToArray();
+                        .ToArrayAsync();
 
                 foreach (var ar in availableRoles)
                 {
@@ -207,25 +207,20 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return result;
         }
 
-        public IEnumerable<UserRoleSimpleModel> GetStructureUnitUserRoles(Guid structureUnitId)
+        public async Task<IEnumerable<UserRoleSimpleModel>> GetStructureUnitUserRoles(Guid structureUnitId)
         {
             var result = new List<UserRoleSimpleModel>();
             var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 IEnumerable<Guid> roles =
-                    rolemanager.Roles.Where(r => r.Name != "User").Select(r => r.Id).ToArray();
+                    await rolemanager.Roles.Where(r => r.Name != "User").Select(r => r.Id).ToArrayAsync();
 
-                var structureUnit = unitOfWork.StructureUnitRepository.GetAll().Single(su => su.UniqueId == structureUnitId);
+                var structureUnit = await unitOfWork.StructureUnitRepository.GetAll().SingleAsync(su => su.UniqueId == structureUnitId);
                 var structureUnitChains = structureUnit.Ancestors(true, su => su.ParentStructureUnit).Select(su => su.Id);
 
                 var availableRoles =
-                    unitOfWork.StructureUnitUserRoleRepository.GetAll()
-                        .Where(suur => structureUnitChains.Contains(suur.StructureUnitId))
-                        .Where(suur => roles.Contains(suur.RoleRoleId))
-                        //.Join(structureUnitChains, suur => suur.StructureUnitId, r => r, (suur, r) => suur)
-                        //.Join(roles, suur => suur.RoleRoleId, r => r, (suur, r) => new { Suur = suur })
-                        .ToArray();
+                    await unitOfWork.StructureUnitUserRoleRepository.GetAll().Where(suur => structureUnitChains.Contains(suur.StructureUnitId)).Where(suur => roles.Contains(suur.RoleRoleId)).ToArrayAsync();
 
                 result.AddRange(availableRoles.Select(ar => MapperFromModelToView.MapToUserRoleSimpleModel(ar, structureUnitId)));
             }
@@ -267,7 +262,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                     using IUnitOfWork uow = new UnitOfWork(context);
                     foreach (var role in request.Roles.Where(r => !r.IsInRole))
                     {
-                        StructureUnitUserRole[] existUserRoles = uow.StructureUnitUserRoleRepository.GetAll().Where(suur => suur.UserUserId == request.UserId).ToArray();
+                        StructureUnitUserRole[] existUserRoles = await uow.StructureUnitUserRoleRepository.GetAll().Where(suur => suur.UserUserId == request.UserId).ToArrayAsync();
                         if (!existUserRoles.Any(ur => ur.Role.Name == rolemanager.Roles.Single(r => r.Id == role.RoleId).Name))
                         {
 
@@ -289,7 +284,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             //.Include(usr => usr.StructureUnitRoles.Select(sur => sur.StructureUnit))
 
             var userStructureUnitIds = user.StructureUnitRoles.Where(sur => sur.RoleRoleId == role.Id).Select(sur => sur.StructureUnit.UniqueId);
-            StructureUnit structureUnit = uow.StructureUnitRepository.GetAll().Include(usr => usr.ParentStructureUnit).Single(su => su.UniqueId == structureUnitUniqId);
+            StructureUnit structureUnit = await uow.StructureUnitRepository.GetAll().Include(usr => usr.ParentStructureUnit).SingleAsync(su => su.UniqueId == structureUnitUniqId);
             var structureUnitChains = structureUnit.Ancestors(true, su => su.ParentStructureUnit).Select(su => su.UniqueId);
             return structureUnitChains.Intersect(userStructureUnitIds).Any();
         }
@@ -310,8 +305,8 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 {
                     return UserRoleUpdateStatus.UserNotExist;
                 }
-                var existUserRoles =
-                    uow.StructureUnitUserRoleRepository.GetAll().Where(suur => suur.UserUserId == userId).ToArray();
+                var existUserRoles = await
+                    uow.StructureUnitUserRoleRepository.GetAll().Where(suur => suur.UserUserId == userId).ToArrayAsync();
                 var todeleteList = new List<StructureUnitUserRole>();
                 var toaddList = new List<StructureUnitUserRole>();
                 foreach (var userRole in userRoles)
@@ -334,8 +329,8 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                                 suur.RoleRoleId == userRole.RoleId &&
                                 suur.StructureUnit.UniqueId == structureUnitId))
                         {
-                            var structureUnit =
-                                uow.StructureUnitRepository.GetAll().SingleOrDefault(
+                            var structureUnit = await
+                                uow.StructureUnitRepository.GetAll().SingleOrDefaultAsync(
                                     su => su.UniqueId == structureUnitId);
                             if (structureUnit == null)
                             {
@@ -396,7 +391,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 StructureUnitUserRole structureUnitRole = user.StructureUnitRoles.Single(sur => sur.Role.Name == "User");
                 if (structureUnitRole.StructureUnit.UniqueId != model.StructureUnitId)
                 {
-                    structureUnitRole.StructureUnitId = unitOfWork.StructureUnitRepository.GetAll().Single(su => su.UniqueId == model.StructureUnitId).Id;
+                    structureUnitRole.StructureUnitId = (await unitOfWork.StructureUnitRepository.GetAll().SingleAsync(su => su.UniqueId == model.StructureUnitId)).Id;
                     unitOfWork.StructureUnitUserRoleRepository.Update(structureUnitRole, structureUnitRole.Id);
                 }
                 if (customUserManager.Users.Any(usr => usr.UserName == user.UserName && usr.Id != user.Id))
@@ -509,7 +504,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 if (removeAdmin.Any())
                 {
                     StructureUnitUserRole[] companyAdmins = company.StructureUnitRoles.Where(sur => sur.RoleRoleId == adminRoleId).ToArray();
-                    if (companyAdmins.Count() == 1 && companyAdmins.Single().UserUserId == userId)
+                    if (companyAdmins.Length == 1 && companyAdmins.Single().UserUserId == userId)
                     {
                         return false;
                     }

@@ -20,7 +20,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationContracts
 
 		SoftwareCollection GetForAutocomplete(Guid value, string contains, bool? includeSubUnits = false);
 
-		GetSoftwaresByMachineIdResponse GetByMachineId(GetSoftwaresByMachineIdRequest request);
+		Task<GetSoftwaresByMachineIdResponse> GetByMachineId(GetSoftwaresByMachineIdRequest request);
 
 		IEnumerable<LicenseFilterTypeModel> GetSoftwareTypes();
 

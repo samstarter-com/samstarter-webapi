@@ -14,7 +14,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationContracts.SecurityService
 
         Task<ValidateUserResponse> ValidateUser(ValidateUserRequest request);
 
-        GetAccountResponse GetAccount(GetAccountRequest request);
+        Task<GetAccountResponse> GetAccount(GetAccountRequest request);
 
         Task<CreateUserResponse> CreateUserAsync(CreateUserRequest request);
 
