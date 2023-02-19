@@ -23,6 +23,7 @@ jobs:
       with:
         versionSpec: '5.x'
     - name: Determine Version
+      id: version    
       uses: gittools/actions/gitversion/execute@v0.9.7
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
