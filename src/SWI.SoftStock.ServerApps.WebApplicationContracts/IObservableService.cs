@@ -1,3 +1,5 @@
+using SWI.SoftStock.ServerApps.WebApplicationContracts.ObservableService.Add;
+using SWI.SoftStock.ServerApps.WebApplicationContracts.ObservableService.Append;
 using SWI.SoftStock.ServerApps.WebApplicationContracts.ObservableService.GetAll;
 using SWI.SoftStock.ServerApps.WebApplicationContracts.Statuses;
 using SWI.SoftStock.ServerApps.WebApplicationModel;
@@ -18,9 +20,9 @@ namespace SWI.SoftStock.ServerApps.WebApplicationContracts
 
 		#region observable  caommand
 
-		Task<Tuple<Guid?, ObservableCreationStatus>> Add(ObservableModelEx modelEx, Guid companyId, Guid createdByUserId);
+		Task<AddResponse> Add(ObservableModelEx modelEx, Guid companyId, Guid createdByUserId);
 
-        Task<Tuple<Guid?, ObservableAppendStatus>> Append(Guid observableId, Guid machineId);
+        Task<AppendResponse> Append(Guid observableId, Guid machineId);
 
 		Task<ObservableRemoveStatus> Remove(Guid machineId, Guid observableId);
 

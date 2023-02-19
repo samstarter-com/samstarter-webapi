@@ -1,9 +1,13 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using SWI.SoftStock.ServerApps.DataAccess2;
 using SWI.SoftStock.ServerApps.DataModel2;
 using SWI.SoftStock.ServerApps.WebApplicationContracts;
 using SWI.SoftStock.ServerApps.WebApplicationContracts.Statuses;
+using SWI.SoftStock.ServerApps.WebApplicationContracts.StructureUnitService.CreateAndAdd;
+using SWI.SoftStock.ServerApps.WebApplicationContracts.StructureUnitService.GetCompanyIdByName;
+using SWI.SoftStock.ServerApps.WebApplicationContracts.StructureUnitService.GetCompanyIdByStructureUnitId;
+using SWI.SoftStock.ServerApps.WebApplicationContracts.StructureUnitService.GetStructureUnitModels;
 using SWI.SoftStock.ServerApps.WebApplicationModel;
 using System;
 using System.Collections.Generic;
@@ -25,7 +29,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         #region IStructureUnitService Members
 
-        public Tuple<int, Guid> GetCompanyIdByStructureUnitId(Guid structureUnitId)
+        public GetCompanyIdByStructureUnitIdResponse GetCompanyIdByStructureUnitId(Guid structureUnitId)
         {
             using var dbContext = dbFactory.CreateDbContext();
             var company = dbContext.StructureUnits.
@@ -33,7 +37,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                                 .Single(c => c.UniqueId == structureUnitId)
                                 .Ancestors(true, su => su.ParentStructureUnit)
                                 .Single(psu => psu.UnitType == UnitType.Company);
-            return new Tuple<int, Guid>(company.Id, company.UniqueId);
+            return new GetCompanyIdByStructureUnitIdResponse { CompanyId = company.Id, CompanyUniqueId = company.UniqueId };
         }
 
         public async Task<StructureUnitModel> GetByUniqueId(Guid uniqueId)
@@ -100,7 +104,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         /// <param name="parentId"></param>
         /// <param name="status"></param>
         /// <returns></returns>
-        public async Task<Tuple<Guid?, StructureUnitCreationStatus>> CreateAndAdd(StructureUnitModel model, Guid parentId)
+        public async Task<CreateAndAddResponse> CreateAndAdd(StructureUnitModel model, Guid parentId)
         {
             StructureUnitCreationStatus status;
             try
@@ -110,15 +114,15 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 if (res.Item2 == StructureUnitCreationStatus.Success)
                 {
                     await Add(structureUnit);
-                    return new Tuple<Guid?, StructureUnitCreationStatus>(structureUnit.UniqueId, res.Item2);
+                    return new CreateAndAddResponse { StructureUnitId = structureUnit.UniqueId, Status = res.Item2 };
                 }
-                return null;
+                return new CreateAndAddResponse { Status = res.Item2 };
             }
             catch (Exception e)
             {
                 log.LogError("Error in StructureUnitService.CreateAndAdd:{0}", e);
                 status = StructureUnitCreationStatus.RunTime;
-                return new Tuple<Guid?, StructureUnitCreationStatus>(null, status);
+                return new CreateAndAddResponse { Status = status };
             }
         }
 
@@ -178,7 +182,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return StructureUnitUpdateStatus.Success;
         }
 
-        public async Task<Tuple<IEnumerable<StructureUnitTreeItemModel>, StructureUnitModel>> GetStructureUnitModels(Guid userId,
+        public async Task<GetStructureUnitModelsResponse> GetStructureUnitModels(Guid userId,
             Guid? selectedId,
             string[] roles)
         {
@@ -226,17 +230,17 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                     result.Remove(tr);
                 }
             }
-            return new Tuple<IEnumerable<StructureUnitTreeItemModel>, StructureUnitModel>(result, selectedStructureUnit);
+            return new GetStructureUnitModelsResponse { StructureUnits = result, StructureUnit = selectedStructureUnit };
         }
 
-        public async Task<Tuple<int, Guid>> GetCompanyIdByName(string companyName)
+        public async Task<GetCompanyIdByNameResponse> GetCompanyIdByName(string companyName)
         {
             var dbContext = dbFactory.CreateDbContext();
 
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             StructureUnit company = await unitOfWork.StructureUnitRepository.GetAll()
                 .SingleAsync(c => c.UnitType == UnitType.Company && c.Name == companyName);
-            return new Tuple<int, Guid>(company.Id, company.UniqueId);
+            return new GetCompanyIdByNameResponse { CompanyId = company.Id, CompanyUniqueId = company.UniqueId };
         }
 
         public async Task<int> GetIdByUniqueId(Guid structureUnitId)

@@ -86,7 +86,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
         [Route("{licenseId}/licensemachines")]
         public async Task<IActionResult> LicenseMachines(Guid licenseId)
         {           
-            var suGuids = await this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(UserId), new[] { "Manager" });
+            var suGuids = await this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(UserId), new[] { Constants.RoleManager });
 
             var request = new LicenseMachinesRequest
             {
@@ -111,7 +111,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
         [Route("{licenseId}/unlicensemachines")]
         public async Task<IActionResult> UnLicenseMachines(Guid licenseId)
         {         
-            var suGuids = await this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(UserId), new[] { "Manager" });
+            var suGuids = await this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(UserId), new[] { Constants.RoleManager });
 
             var request = new UnLicenseMachinesRequest
             {
@@ -136,7 +136,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
         [Route("{machineId}/licenselicenses")]
         public async Task<IActionResult> LicenseLicenses(Guid machineId)
         {            
-            var suGuids = await this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(UserId), new[] { "Manager" });
+            var suGuids = await this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(UserId), new[] { Constants.RoleManager });
 
             var request = new LicenseLicenseRequest
             {
@@ -160,7 +160,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
         [Route("{machineId}/unlicenselicenses")]
         public async Task<IActionResult> UnLicenseLicenses(Guid machineId)
         {            
-            var suGuids = await this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(UserId), new[] { "Manager" });
+            var suGuids = await this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(UserId), new[] { Constants.RoleManager });
 
             var request = new UnLicenseLicensesRequest
             {

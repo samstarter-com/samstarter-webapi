@@ -103,7 +103,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
         public async Task<IActionResult> Append(Guid observableId, Guid machineId)
         {
             var res = await this.observableService.Append(observableId, machineId);
-            var status = res.Item2;
+            var status = res.Status;
             switch (status)
             {
                 case ObservableAppendStatus.Success:
@@ -167,8 +167,8 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
             var userId = Guid.Parse(UserId);
             var companyId = this.userService.GetCompanyId(userId);
             var res = await this.observableService.Add(modelEx, companyId, userId);
-            Guid? observableId = res.Item1;
-            var status = res.Item2;
+            Guid? observableId = res.ObservableId;
+            var status = res.Status;
             switch (status)
             {
                 case ObservableCreationStatus.Success:

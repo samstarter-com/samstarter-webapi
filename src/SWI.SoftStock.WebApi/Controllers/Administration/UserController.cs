@@ -105,7 +105,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Administration
         {           
 
             var suIds = roles.Select(r => r.StructureUnitId).Distinct();
-            if (suIds.Any(suId => !this.userService.IsUserInRole(Guid.Parse(UserId), "Admin", suId).Result))
+            if (suIds.Any(suId => !this.userService.IsUserInRole(Guid.Parse(UserId), Constants.RoleAdministrator, suId).Result))
             {
                 throw new UnauthorizedAccessException();
             }

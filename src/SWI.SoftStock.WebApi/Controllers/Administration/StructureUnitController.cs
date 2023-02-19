@@ -62,10 +62,10 @@ namespace SWI.SoftStock.WebApi.Controllers.Administrations
             {
                 uniqueId = (await this.structureUnitService.GetStructureUnitModels(userGuid,
                     null,
-                    new[] { "Admin" })).Item1.First().UniqueId;
+                    new[] { Constants.RoleAdministrator })).StructureUnits.First().UniqueId;
             }
 
-            var adminRoleId = this.rolemanager.Roles.Single(r => r.Name == "Admin").Id;
+            var adminRoleId = this.rolemanager.Roles.Single(r => r.Name == Constants.RoleAdministrator).Id;
             var detail = await this.structureUnitService.GetByUniqueId(uniqueId);
             detail.IsRootUnit = detail.ParentUniqueId == null || (await this.userService.GetUserRoles(detail.ParentUniqueId.Value, userGuid)).All(urm => urm.RoleId != adminRoleId);
 
@@ -83,8 +83,8 @@ namespace SWI.SoftStock.WebApi.Controllers.Administrations
             if (this.ModelState.IsValid)
             {
                 var res = await this.structureUnitService.CreateAndAdd(model, model.ParentUniqueId.Value);
-                var uniqueId = res.Item1;
-                var status = res.Item2;
+                var uniqueId = res.StructureUnitId;
+                var status = res.Status;
                 switch (status)
                 {
                     case StructureUnitCreationStatus.Success:

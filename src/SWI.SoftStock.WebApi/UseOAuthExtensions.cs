@@ -96,9 +96,9 @@ namespace SWI.SoftStock.WebApi
 
             services.AddAuthorization(options =>
                 {
-                    options.AddPolicy(Constants.PolicyAdministrator, policy => policy.RequireClaim(ClaimTypes.Role, "Admin"));
-                    options.AddPolicy(Constants.PolicyManager, policy => policy.RequireClaim(ClaimTypes.Role, "Manager"));
-                    options.AddPolicy(Constants.PolicyUser, policy => policy.RequireClaim(ClaimTypes.Role, "User"));
+                    options.AddPolicy(Constants.PolicyAdministrator, policy => policy.RequireClaim(ClaimTypes.Role, Constants.RoleAdministrator));
+                    options.AddPolicy(Constants.PolicyManager, policy => policy.RequireClaim(ClaimTypes.Role, Constants.RoleManager));
+                    options.AddPolicy(Constants.PolicyUser, policy => policy.RequireClaim(ClaimTypes.Role, Constants.RoleUser));
                 });
             return services;
         }

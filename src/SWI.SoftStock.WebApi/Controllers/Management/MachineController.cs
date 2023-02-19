@@ -290,7 +290,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
         public async Task<IActionResult> MachineLicenses(Guid machineId, [FromQuery] PagingModel paging, [FromQuery] OrderingModel ordering,
             int status)
         {          
-            var suGuids = await this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(UserId), new[] { "Manager" });
+            var suGuids = await this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(UserId), new[] { Constants.RoleManager });
 
             var request = new GetAvailableLicensesByMachineIdRequest();
             request.SuIds = suGuids;

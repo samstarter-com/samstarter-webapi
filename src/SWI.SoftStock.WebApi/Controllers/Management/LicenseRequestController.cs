@@ -118,11 +118,11 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
                     
             var userId = Guid.Parse(UserId);
 
-            var res = await this.licenseRequestService.Add(model,
+            var result = await this.licenseRequestService.Add(model,
                 userId,
                 model.Sending);
-            var licenseRequestId = res.Item1;
-            var status = res.Item2;
+            var licenseRequestId = result.LicenseRequestId;
+            var status = result.Status;
             var message = SaveLicenseRequestStatusEn.GetErrorMessage(status);
             switch (status)
             {

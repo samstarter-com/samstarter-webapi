@@ -44,7 +44,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
                         uniqueId
                     : null,
                 new[] { role });
-            return this.Ok(res.Item1);
+            return this.Ok(res.StructureUnits);
         }
     }
 }

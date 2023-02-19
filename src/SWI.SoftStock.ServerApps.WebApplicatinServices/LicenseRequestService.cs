@@ -16,6 +16,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using SWI.SoftStock.ServerApps.WebApplicationContracts.LicenseRequestService.CreateLicense;
+using SWI.SoftStock.ServerApps.WebApplicationContracts.LicenseRequestService.Add;
 
 namespace SWI.SoftStock.ServerApps.WebApplicationServices
 {
@@ -91,7 +92,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return result;
         }
 
-        public async Task<Tuple<Guid?, SaveLicenseRequestStatus>> Add(NewLicenseRequestModel model, Guid managerId, bool sending)
+        public async Task<LicenseRequestAddResponse> Add(NewLicenseRequestModel model, Guid managerId, bool sending)
         {
             LicenseRequest licenseRequest;
             SaveLicenseRequestStatus status;
@@ -117,22 +118,22 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 if (software == null)
                 {
                     status = SaveLicenseRequestStatus.SoftwareNotFound;
-                    return null;
+                    return new LicenseRequestAddResponse() { Status = status };
                 }
 
                 User user = customUserManager.Users.SingleOrDefault(l => l.Id == model.UserId);
                 if (user == null)
                 {
                     status = SaveLicenseRequestStatus.UserNotFound;
-                    return null;
+                    return new LicenseRequestAddResponse() { Status = status };
                 }
 
                 model.UserEmail = user.Email;
-                User manager = customUserManager.Users.SingleOrDefault(l => l.Id == managerId);
+                User manager = await customUserManager.Users.SingleOrDefaultAsync(l => l.Id == managerId);
                 if (manager == null)
                 {
                     status = SaveLicenseRequestStatus.ManagerNotFound;
-                    return null;
+                    return new LicenseRequestAddResponse() { Status = status };
                 }
 
                 IQueryable<MachineSoftware> machineSoftwares =
@@ -141,7 +142,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 if (!machineSoftwares.Any())
                 {
                     status = SaveLicenseRequestStatus.SoftwareOnMachineNotFound;
-                    return null;
+                    return new LicenseRequestAddResponse() { Status = status };
                 }
                 licenseRequest = MapperFromViewToModel.MapToLicenseRequest(model,
                     machine.Id,
@@ -155,7 +156,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 await unitOfWork.SaveAsync();
             }
             status = SaveLicenseRequestStatus.Success;
-            return new Tuple<Guid?, SaveLicenseRequestStatus>(licenseRequest.UniqueId, status);
+            return new LicenseRequestAddResponse() { LicenseRequestId = licenseRequest.UniqueId, Status = status };
         }
 
         public async Task<LicenseRequestModel> GetLicenseRequestModelByIdAsync(Guid licenseRequestId)

@@ -54,7 +54,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
             var companyId = this.userService.GetCompanyId(userId);
             var userStructureUnitRoles = await this.userService.GetUserStructureUnitRolesAsync(userId);
             var userStructureUnitIds = userStructureUnitRoles
-                .Where(usur => usur.RoleName.ToLower() == "manager")
+                .Where(usur => usur.RoleName.ToLower() == Constants.RoleManager.ToLower())
                 .Select(usur => usur.StructureUnitId);
 
             var request = new GetByIdRequest
@@ -204,7 +204,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
         {          
             var userId = Guid.Parse(UserId);
 
-            var suGuids = await this.structureUnitService.GetStructureUnitsGuid(userId, new[] { "Manager" });
+            var suGuids = await this.structureUnitService.GetStructureUnitsGuid(userId, new[] { Constants.RoleManager });
 
             var request = new GetBySoftwareIdRequest();
             request.Paging = MapperFromViewToModel.MapToPaging(paging);

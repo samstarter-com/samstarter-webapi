@@ -272,7 +272,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
             [FromQuery] OrderingModel ordering,
             int status)
         {           
-            var suGuids = await this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(UserId), new[] { "Manager" });
+            var suGuids = await this.structureUnitService.GetStructureUnitsGuid(Guid.Parse(UserId), new[] { Constants.RoleManager });
 
             var request = new GetLicensedMachineRequest();
             request.Paging = MapperFromViewToModel.MapToPaging(paging);

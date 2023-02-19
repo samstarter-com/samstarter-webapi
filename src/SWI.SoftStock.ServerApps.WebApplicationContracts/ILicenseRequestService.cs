@@ -1,4 +1,5 @@
-﻿using SWI.SoftStock.ServerApps.WebApplicationContracts.LicenseRequestService.CreateLicense;
+﻿using SWI.SoftStock.ServerApps.WebApplicationContracts.LicenseRequestService.Add;
+using SWI.SoftStock.ServerApps.WebApplicationContracts.LicenseRequestService.CreateLicense;
 using SWI.SoftStock.ServerApps.WebApplicationContracts.LicenseRequestService.GetByStructureUnitId;
 using SWI.SoftStock.ServerApps.WebApplicationContracts.LicenseRequestService.GetNewLicenseRequest;
 using SWI.SoftStock.ServerApps.WebApplicationContracts.LicenseRequestService.GetNewLicenseRequestCount;
@@ -22,7 +23,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationContracts
 
         #region license request commnd
 
-        Task<Tuple<Guid?, SaveLicenseRequestStatus>> Add(NewLicenseRequestModel model, Guid managerId, bool sending);
+        Task<LicenseRequestAddResponse> Add(NewLicenseRequestModel model, Guid managerId, bool sending);
         Task<UpdateLicenseRequestStatus> Update(LicenseRequestModel model, bool sending);
         Task<SendLicenseRequestStatus> SendToUser(Guid licenseRequestId);
         Task<CreateLicenseBasedOnLicenseRequestResponse> CreateLicenseAsync(CreateLicenseBasedOnLicenseRequestRequest request);

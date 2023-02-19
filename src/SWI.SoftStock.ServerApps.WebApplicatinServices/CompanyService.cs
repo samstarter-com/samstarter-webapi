@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 
 namespace SWI.SoftStock.ServerApps.WebApplicationServices
 {
-
     public class CompanyService : ICompanyService
     {
         private readonly IDbContextFactory<MainDbContext> dbFactory;

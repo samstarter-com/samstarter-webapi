@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Logging;
 using SWI.SoftStock.ServerApps.DataAccess2;
 using SWI.SoftStock.ServerApps.DataModel2;
@@ -13,7 +12,6 @@ using SWI.SoftStock.ServerApps.WebApplicationContracts.SecurityService.CreateUse
 using SWI.SoftStock.ServerApps.WebApplicationContracts.SecurityService.GetAccount;
 using SWI.SoftStock.ServerApps.WebApplicationContracts.SecurityService.RegisterCompany;
 using SWI.SoftStock.ServerApps.WebApplicationContracts.SecurityService.ValidateUser;
-using SWI.SoftStock.ServerApps.WebApplicationContracts.UserService;
 using SWI.SoftStock.ServerApps.WebApplicationContracts.UserService.SetUsersRoles;
 using SWI.SoftStock.ServerApps.WebApplicationModel;
 using System;
@@ -77,7 +75,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                     return new RegisterCompanyResponse { Status = status };
                 }
 
-                var (companyId, structureUnitId) = await structureUnitService.GetCompanyIdByName(model.CompanyName);
+                var result = await structureUnitService.GetCompanyIdByName(model.CompanyName);
                 var userId = user.Id;
                 var setUsersRolesRequest = new SetUsersRolesRequest
                 {
@@ -85,7 +83,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                     Roles = new[] {
                             new RoleData() { RoleId = customRoleManager.Roles.Single(r=>r.Name== "Admin").Id,  IsInRole = true },
                             new RoleData() { RoleId = customRoleManager.Roles.Single(r => r.Name == "User").Id, IsInRole = true } },
-                    StructureUnitId = structureUnitId
+                    StructureUnitId = result.CompanyUniqueId
                 };
                 var setUsersRolesResponse = await userService.SetUsersRolesAsync(setUsersRolesRequest);
 
@@ -94,7 +92,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                     log.LogWarning("UserService.SetUsersRoles return status:{0}", setUsersRolesResponse.Status);
                     return new RegisterCompanyResponse { Status = RegisterCompanyStatus.UnknownError };
                 }
-                var isSetCompanyAccount = await SetCompanyAccount(companyId, request.AccountName);
+                var isSetCompanyAccount = await SetCompanyAccount(result.CompanyId, request.AccountName);
                 if (!isSetCompanyAccount)
                 {
                     log.LogWarning("Cannot set SetCompanyAccount");
@@ -197,7 +195,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 LastPasswordFailureDate = DateTime.UtcNow,
                 SendStatus = SendStatus.None,
                 SendCount = 0,
-                CompanyId = companyResult.Item1,
+                CompanyId = companyResult.CompanyId,
                 FirstName = firstName,
                 LastName = lastName
             };

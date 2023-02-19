@@ -11,6 +11,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
     public class DocumentService : IDocumentService
     {
         private readonly IDbContextFactory<MainDbContext> dbFactory;
+
         public DocumentService(IDbContextFactory<MainDbContext> dbFactory)
         {
             this.dbFactory = dbFactory ?? throw new ArgumentNullException(nameof(dbFactory));

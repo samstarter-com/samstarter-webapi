@@ -1,4 +1,8 @@
 using SWI.SoftStock.ServerApps.WebApplicationContracts.Statuses;
+using SWI.SoftStock.ServerApps.WebApplicationContracts.StructureUnitService.CreateAndAdd;
+using SWI.SoftStock.ServerApps.WebApplicationContracts.StructureUnitService.GetCompanyIdByName;
+using SWI.SoftStock.ServerApps.WebApplicationContracts.StructureUnitService.GetCompanyIdByStructureUnitId;
+using SWI.SoftStock.ServerApps.WebApplicationContracts.StructureUnitService.GetStructureUnitModels;
 using SWI.SoftStock.ServerApps.WebApplicationModel;
 using System;
 using System.Collections.Generic;
@@ -13,15 +17,15 @@ namespace SWI.SoftStock.ServerApps.WebApplicationContracts
         Task<StructureUnitModel> GetByUniqueId(Guid uniqueId);
         Task<Guid?> GetParentUniqueId(Guid uniqueId);
 
-        Task<Tuple<IEnumerable<StructureUnitTreeItemModel>, StructureUnitModel>> GetStructureUnitModels(Guid userId, Guid? selectedId, string[] roles);
+        Task<GetStructureUnitModelsResponse> GetStructureUnitModels(Guid userId, Guid? selectedId, string[] roles);
 
-        Task<Tuple<int, Guid>> GetCompanyIdByName(string companyName);
+        Task<GetCompanyIdByNameResponse> GetCompanyIdByName(string companyName);
 
         Task<int> GetIdByUniqueId(Guid structureUnitId);
 
         Task<IEnumerable<Guid>> GetStructureUnitsGuid(Guid userId, string[] roles);
 
-        Tuple<int, Guid> GetCompanyIdByStructureUnitId(Guid structureUnitId);
+        GetCompanyIdByStructureUnitIdResponse GetCompanyIdByStructureUnitId(Guid structureUnitId);
 
         #endregion
 
@@ -29,7 +33,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationContracts
 
         Task<StructureUnitDeleteStatus> DeleteByUniqueId(Guid uniqueId);
 
-		Task<Tuple<Guid?, StructureUnitCreationStatus>> CreateAndAdd(StructureUnitModel model, Guid parentId);
+		Task<CreateAndAddResponse> CreateAndAdd(StructureUnitModel model, Guid parentId);
 
 		Task<StructureUnitUpdateStatus> Update(StructureUnitModel model);
 
