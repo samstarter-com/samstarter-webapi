@@ -4,6 +4,7 @@ using SWI.SoftStock.ServerApps.DataModel2;
 using SWI.SoftStock.ServerApps.WebApplicationContracts;
 using SWI.SoftStock.ServerApps.WebApplicationContracts.FeedbackService.Add;
 using System;
+using System.Threading.Tasks;
 
 namespace SWI.SoftStock.ServerApps.WebApplicationServices
 {
@@ -17,14 +18,14 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             this.dbFactory = dbFactory ?? throw new ArgumentNullException(nameof(dbFactory));
         }
 
-        public FeedbackAddResponse Add(FeedbackAddRequest request)
+        public async Task<FeedbackAddResponse> Add(FeedbackAddRequest request)
         {
             var dbContext = dbFactory.CreateDbContext();
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 var feedback = MapperFromViewToModel.MapToFeedback(request.Feedback, request.UserIp);
                 unitOfWork.FeedbackRepository.Add(feedback);
-                unitOfWork.Save();
+                await unitOfWork.SaveAsync();
             }
             return new FeedbackAddResponse() {Status = FeedbackAddStatus.Success};
         }

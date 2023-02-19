@@ -53,7 +53,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                         .Select(suur => suur.User)
                         .Where(s => s.EmailConfirmed && !(s.LockoutEnabled && s.LockoutEnd.HasValue && s.LockoutEnd > DateTime.UtcNow) && s.UserName.ToLower().Contains(contains));
 
-                var users = query.OrderBy(u => u.UserName).ToArray();
+                var users = await query.OrderBy(u => u.UserName).ToArrayAsync();
                 return users.Select(u => MapperFromModelToView.MapToUserModel(u, su));
             }
         }
@@ -349,7 +349,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 {
                     uow.StructureUnitUserRoleRepository.DeleteRange(todeleteList.ToArray());
                     uow.StructureUnitUserRoleRepository.AddRange(toaddList.ToArray());
-                    uow.Save();
+                    await uow.SaveAsync();
                 }
                 catch (Exception e)
                 {
@@ -406,7 +406,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 }
 
                 await customUserManager.UpdateAsync(user);
-                unitOfWork.Save();
+                await unitOfWork.SaveAsync();
             }
             return UserUpdateStatus.Success;
         }
@@ -425,7 +425,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             try
             {
                 await customUserManager.DeleteAsync(user);
-                unitOfWork.Save();
+                await unitOfWork.SaveAsync();
             }
             catch (Exception e)
             {
@@ -447,7 +447,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         #endregion
 
-        private Expression<Func<User, object>> GetByStructureUnitIdOrderingSelecetor(string sort)
+        private static Expression<Func<User, object>> GetByStructureUnitIdOrderingSelecetor(string sort)
         {
             Expression<Func<User, object>> keySelector = m => m.UserName;
             SortModel[] sortModels = UserModelEx.GetSorting();
@@ -513,7 +513,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return true;
         }
 
-        private UserDeleteStatus CheckBeforeDelete(User user)
+        private static UserDeleteStatus CheckBeforeDelete(User user)
         {
             if (user.StructureUnitRoles.Any(sur => sur.Role.Name != "User"))
             {

@@ -14,7 +14,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationContracts
         #region license request query
         Task<NewLicenseRequestResponse> GetNewLicenseRequest(NewLicenseRequestRequest request);
         Task<LicenseRequestModel> GetLicenseRequestModelByIdAsync(Guid licenseRequestId);
-        GetByStructureUnitIdResponse GetByStructureUnitId(GetByStructureUnitIdRequest request);
+        Task<GetByStructureUnitIdResponse> GetByStructureUnitId(GetByStructureUnitIdRequest request);
         Task<LicenseRequestDocumentModelEx> GetDocumentById(Guid id);
         Task<GetNewLicenseRequestCountResponse> GetNewLicenseRequestCount(GetNewLicenseRequestCountRequest request);
 

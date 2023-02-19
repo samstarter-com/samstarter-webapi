@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SWI.SoftStock.ServerApps.WebApplicationContracts;
 using SWI.SoftStock.ServerApps.WebApplicationContracts.FeedbackService.Add;
 using SWI.SoftStock.ServerApps.WebApplicationModel;
+using System.Threading.Tasks;
 
 namespace SWI.SoftStock.WebApi.Controllers
 {
@@ -20,11 +21,11 @@ namespace SWI.SoftStock.WebApi.Controllers
 
         [HttpPost]
         [Route("feedback")]
-        public IActionResult Feedback(FeedbackModel model)
+        public async Task<IActionResult> Feedback(FeedbackModel model)
         {
 
             var userIp = this.HttpContext.Connection.RemoteIpAddress.ToString(); ;
-            this.feedbackService.Add(new FeedbackAddRequest { Feedback = model, UserIp = userIp });
+            await this.feedbackService.Add(new FeedbackAddRequest { Feedback = model, UserIp = userIp });
             return this.Ok();
         }
 

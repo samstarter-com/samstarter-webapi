@@ -34,7 +34,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 var query = unitOfWork.MachineRepository.Query(m => m.CurrentUserId == request.UserId && !m.IsDisabled);
                 totalRecords = await query.CountAsync();
                 var machines = query.Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
-                items = machines.Select(MapperFromModelToView.MapToPersonalMachineModel).ToArray();
+                items = (await machines.ToArrayAsync()).Select(MapperFromModelToView.MapToPersonalMachineModel);
             }
             response.Model.Items = items;
             response.Model.TotalRecords = totalRecords;

@@ -6,6 +6,7 @@ using SWI.SoftStock.ServerApps.WebApplicationContracts.CompanyService.Add;
 using SWI.SoftStock.ServerApps.WebApplicationModel;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace SWI.SoftStock.ServerApps.WebApplicationServices
 {
@@ -19,7 +20,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             this.dbFactory = dbFactory ?? throw new ArgumentNullException(nameof(dbFactory));
         }
 
-        public CompanyAddResponse Add(StructureUnitModel model)
+        public async Task<CompanyAddResponse> Add(StructureUnitModel model)
         {
             var company = new StructureUnit
             {
@@ -34,15 +35,10 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             if (!IsCompanyExists(unitOfWork, company.Name))
             {
                 unitOfWork.StructureUnitRepository.Add(company);
-                unitOfWork.Save();
+                await unitOfWork.SaveAsync();
                 return new CompanyAddResponse() { CompanyUniqueId = company.UniqueId, CompanyId = company.Id, Status = CompanyCreationStatus.Success };
             }
             return new CompanyAddResponse() { Status = CompanyCreationStatus.NonUnique };
-        }
-
-        private bool IsCompanyExists(IUnitOfWork unitOfWork, string name)
-        {
-            return unitOfWork.StructureUnitRepository.Query(c => c.UnitType == UnitType.Company && c.Name == name).Any();
         }
 
         public bool IsCompanyExists(string name)
@@ -51,6 +47,11 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             return IsCompanyExists(unitOfWork, name);
+        }
+
+        private static bool IsCompanyExists(IUnitOfWork unitOfWork, string name)
+        {
+            return unitOfWork.StructureUnitRepository.Query(c => c.UnitType == UnitType.Company && c.Name.Equals(name,StringComparison.InvariantCultureIgnoreCase)).Any();
         }
     }
 }

@@ -152,7 +152,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                     DateTime.UtcNow,
                     managerId);
                 unitOfWork.LicenseRequestRepository.Add(licenseRequest);
-                unitOfWork.Save();
+                await unitOfWork.SaveAsync();
             }
             status = SaveLicenseRequestStatus.Success;
             return new Tuple<Guid?, SaveLicenseRequestStatus>(licenseRequest.UniqueId, status);
@@ -166,7 +166,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return license != null ? MapperFromModelToView.MapToManagerLicenseRequestModel(license) : null;
         }
 
-        public GetByStructureUnitIdResponse GetByStructureUnitId(GetByStructureUnitIdRequest request)
+        public async Task<GetByStructureUnitIdResponse> GetByStructureUnitId(GetByStructureUnitIdRequest request)
         {
             var response = new GetByStructureUnitIdResponse
             {
@@ -214,7 +214,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 statusTypeWhere = ExpressionExtension.BuildOr(expressions);
             }
 
-            StructureUnit structureUnit = unitOfWork.StructureUnitRepository.Query(s => s.UniqueId == request.StructureUnitId).Single();
+            StructureUnit structureUnit = await unitOfWork.StructureUnitRepository.Query(s => s.UniqueId == request.StructureUnitId).SingleAsync();
             int suId = structureUnit.Id;
             IQueryable<LicenseRequest> query;
 
@@ -235,22 +235,22 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                     .Where(l => availableStatuses.Contains(l.CurrentStatus));
             }
 
-            int totalRecords = query.Count();
+            int totalRecords = await query.CountAsync();
 
             var keySelector = GetByStructureUnitIdOrderingSelecetor(request.Ordering.Sort);
             IEnumerable<LicenseRequest> licenseRequests;
 
             if (string.IsNullOrEmpty(request.Ordering.Order) || request.Ordering.Order.ToLower() != "desc")
             {
-                licenseRequests = query.OrderBy(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
+                licenseRequests = await query.OrderBy(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize).ToArrayAsync();
             }
             else
             {
-                licenseRequests =
-                    query.OrderByDescending(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
+                licenseRequests = await
+                    query.OrderByDescending(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize).ToArrayAsync();
             }
 
-            LicenseRequestModel[] items = licenseRequests.Select(MapperFromModelToView.MapToManagerLicenseRequestModel).ToArray();
+            var items = licenseRequests.Select(MapperFromModelToView.MapToManagerLicenseRequestModel);
             response.Model.Items = items;
             response.Model.TotalRecords = totalRecords;
             response.Status = GetByStructureUnitIdStatus.Success;
@@ -295,7 +295,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
             if (changed)
             {
-                unitOfWork.Save();
+                await unitOfWork.SaveAsync();
             }
 
             return UpdateLicenseRequestStatus.Success;
@@ -335,7 +335,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 StatusDateTime =
                     licenseRequest.CurrentStatusDateTime
             });
-            unitOfWork.Save();
+            await unitOfWork.SaveAsync();
 
             return SendLicenseRequestStatus.Success;
         }
@@ -417,7 +417,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                             licenseRequest.CurrentStatusDateTime
                     });
                 }
-                unitOfWork.Save();
+                await unitOfWork.SaveAsync();
             }
             return ArchiveLicenseRequestStatus.Success;
         }
@@ -435,7 +435,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         #endregion
 
-        private Expression<Func<LicenseRequest, object>> GetByStructureUnitIdOrderingSelecetor(string sort)
+        private static Expression<Func<LicenseRequest, object>> GetByStructureUnitIdOrderingSelecetor(string sort)
         {
             Expression<Func<LicenseRequest, object>> keySelector = m => m.User.UserName;
             SortModel[] sortModels = LicenseRequestModel.GetSorting();
@@ -487,7 +487,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return keySelector;
         }
 
-        private License CreateLicense(LicenseRequest licenseRequest)
+        private static License CreateLicense(LicenseRequest licenseRequest)
         {
             var result = new License();
             var name = $"License for software {licenseRequest.Software.Name} on machine {licenseRequest.Machine.Name}";
@@ -520,7 +520,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return result;
         }
 
-        private string GetLicenseRequestText(string softwareName, string machineName)
+        private static string GetLicenseRequestText(string softwareName, string machineName)
         {
             // todo place the text in the template repository (see email template and use RazorEngine)
             return $"Please, attach license documents for software \"{softwareName}\" installed on \"{machineName}\"";

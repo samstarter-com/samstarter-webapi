@@ -12,7 +12,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationContracts
 
 		Task<ObservableModelEx> GetObservableModelById(Guid observableId);
 
-		GetAllResponse GetAll(GetAllRequest request);
+		Task<GetAllResponse> GetAll(GetAllRequest request);
 
 		#endregion
 

@@ -70,8 +70,8 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             };
             var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
-            var structureUnit =
-                unitOfWork.StructureUnitRepository.Query(s => s.UniqueId == request.StructureUnitId).Single();
+            var structureUnit = await
+                unitOfWork.StructureUnitRepository.Query(s => s.UniqueId == request.StructureUnitId).SingleAsync();
             IQueryable<Machine> query;
             Expression<Func<Machine, bool>> machineTypeWhere = (m => true);
             switch (request.MachineType)
@@ -104,13 +104,13 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                     .Where(m => structureUnitIds.Contains(m.CurrentLinkedStructureUnitId));
             }
 
-            var totalRecords = query.Count();
+            var totalRecords = await query.CountAsync();
             query = query.Include(m => m.MachineOperationSystem)
                 .Include(m => m.MachineOperationSystem.OperationSystem)
                 .Include(m => m.MachineSoftwaresReadOnly)
                 .Include(m => m.CurrentDomainUser)
                 .Include(m => m.CurrentUser);
-            var keySelector = this.GetByStructureUnitIdMachineOrderingSelector(request.Ordering.Sort);
+            var keySelector = GetByStructureUnitIdMachineOrderingSelector(request.Ordering.Sort);
             if (string.IsNullOrEmpty(request.Ordering.Order) || request.Ordering.Order.ToLower() != "desc")
             {
                 query = query.OrderBy(keySelector);
@@ -230,7 +230,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                     request.SuIds.Contains(ms.Machine.CurrentLinkedStructureUnit.UniqueId));
 
             int totalRecords = await query.CountAsync();
-            var keySelector = this.GetBySoftwareIdOrderingSelecetor(request.Ordering.Sort);
+            var keySelector = GetBySoftwareIdOrderingSelecetor(request.Ordering.Sort);
 
             var machines = (string.IsNullOrEmpty(request.Ordering.Order) || request.Ordering.Order.ToLower() != "desc") ?
                  query.OrderBy(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize) :
@@ -289,7 +289,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 unitOfWork.MachineRepository.Delete(machine);
                 var deletedMachine = new DeletedMachine() { UniqueId = machine.UniqueId, DeletedOn = DateTime.UtcNow };
                 unitOfWork.DeletedMachineRepository.Add(deletedMachine);
-                unitOfWork.Save();
+                await unitOfWork.SaveAsync();
             }
             return MachineDeleteStatus.Success;
         }
@@ -328,7 +328,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 }
                 machine.IsDisabled = true;
                 unitOfWork.MachineRepository.Update(machine, machine.Id);
-                unitOfWork.Save();
+                await unitOfWork.SaveAsync();
             }
             return MachineDisableStatus.Success;
         }
@@ -345,14 +345,14 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 }
                 machine.IsDisabled = false;
                 unitOfWork.MachineRepository.Update(machine, machine.Id);
-                unitOfWork.Save();
+                await unitOfWork.SaveAsync();
             }
             return MachineEnableStatus.Success;
         }
 
         #endregion
 
-        private Expression<Func<MachineSoftware, object>> GetBySoftwareIdOrderingSelecetor(string sort)
+        private static Expression<Func<MachineSoftware, object>> GetBySoftwareIdOrderingSelecetor(string sort)
         {
             Expression<Func<MachineSoftware, object>> keySelector = (m) => m.Machine.Name;
             SortModel[] sortModels = MachineModel.GetSorting();
@@ -389,7 +389,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return keySelector;
         }
 
-        private Expression<Func<Machine, object>> GetByStructureUnitIdMachineOrderingSelector(string sort)
+        private static Expression<Func<Machine, object>> GetByStructureUnitIdMachineOrderingSelector(string sort)
         {
             Expression<Func<Machine, object>> keySelector = (m) => m.Name;
             SortModel[] sortModels = MachineModel.GetSorting();

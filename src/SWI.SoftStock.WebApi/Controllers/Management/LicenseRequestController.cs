@@ -33,7 +33,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
 
         [HttpGet]
         [Route("")]
-        public IActionResult LicenseRequests([FromQuery] string cid, [FromQuery] PagingModel paging,
+        public async Task<IActionResult> LicenseRequests([FromQuery] string cid, [FromQuery] PagingModel paging,
             [FromQuery] OrderingModel ordering, [FromQuery] int status,
             [FromQuery] int? includeSubItems = 0)
         {
@@ -51,7 +51,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
                     Paging = MapperFromViewToModel.MapToPaging(paging),
                     Ordering = MapperFromViewToModel.MapToOrdering(ordering)
                 };
-                response = this.licenseRequestService.GetByStructureUnitId(request);
+                response = await this.licenseRequestService.GetByStructureUnitId(request);
             }
             else
             {

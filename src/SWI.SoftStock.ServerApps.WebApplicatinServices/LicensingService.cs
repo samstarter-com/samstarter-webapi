@@ -111,7 +111,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             {
                 unitOfWork.LicenseMachineSoftwareRepository.Add(lms);
             }
-            unitOfWork.Save();
+            await unitOfWork.SaveAsync();
             response.Status = LicenseSoftwareStatus.Success;
             return response;
         }
@@ -232,7 +232,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
             unitOfWork.LicenseMachineSoftwareRepository.AddRange(lmsss);
 
-            unitOfWork.Save();
+            await unitOfWork.SaveAsync();
             response.Status = LicenseMachineStatus.Success;
             return response;
         }
@@ -294,7 +294,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
             unitOfWork.LicenseMachineSoftwareRepository.AddRange(lmsss);
 
-            unitOfWork.Save();
+            await unitOfWork.SaveAsync();
             response.Status = LicenseMachinesStatus.Success;
             return response;
         }
@@ -400,7 +400,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 unitOfWork.LicenseMachineSoftwareRepository.AddRange(lmsss);
             }
 
-            unitOfWork.Save();
+            await unitOfWork.SaveAsync();
             response.Status = LicenseLicenseStatus.Success;
             return response;
         }

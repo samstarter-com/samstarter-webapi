@@ -73,14 +73,14 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
 
         [HttpGet]
         [Route("autocomplete")]
-        public IActionResult SoftwaresAutocomplete([FromQuery] string request, [FromQuery] string cid = null)
+        public async Task<IActionResult> SoftwaresAutocomplete([FromQuery] string request, [FromQuery] string cid = null)
         {           
             var isGuid = Guid.TryParse(cid, out var cidGuid);
             if (!isGuid)
             {
                 cidGuid = this.userService.GetCompanyId(Guid.Parse(UserId));
             }
-            var model = this.softwareService.GetForAutocomplete(cidGuid, request, true);
+            var model = await this.softwareService.GetForAutocomplete(cidGuid, request, true);
             return this.Ok(new { softwares = model.Items, totalRecords = model.TotalRecords, structureUnitId = cid });
         }
 

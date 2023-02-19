@@ -24,7 +24,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             this.dbFactory = dbFactory ?? throw new ArgumentNullException(nameof(dbFactory));
         }
 
-        private Expression<Func<SoftwareCurrentLinkedStructureUnitReadOnlyGrouped, object>>
+        private static Expression<Func<SoftwareCurrentLinkedStructureUnitReadOnlyGrouped, object>>
             GetByStructureUnitIdOrderingSelecetor(string sort)
         {
             Expression<Func<SoftwareCurrentLinkedStructureUnitReadOnlyGrouped, object>> keySelector =
@@ -94,7 +94,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return keySelector;
         }
 
-        private Expression<Func<MachineSoftwareLicenseReadOnly, object>> GetByMachineIdOrderingSelecetor(string sort)
+        private static Expression<Func<MachineSoftwareLicenseReadOnly, object>> GetByMachineIdOrderingSelecetor(string sort)
         {
             Expression<Func<MachineSoftwareLicenseReadOnly, object>> keySelector = u => u.Software.Name;
             var sortModels = InstalledSoftwareModel.GetSorting();
@@ -199,8 +199,8 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                         (m, su) => m);
                 }
 
-                var machineSoftwares = queryMachine.SelectMany(lm => lm.MachineSoftwares)
-                    .Where(ms => ms.SoftwareId == software.Id).ToArray();
+                var machineSoftwares = await queryMachine.SelectMany(lm => lm.MachineSoftwares)
+                    .Where(ms => ms.SoftwareId == software.Id).ToArrayAsync();
                 detail = MapperFromModelToView.MapToSoftwareModel<SoftwareModel>(software, machineSoftwares);
             }
             else
@@ -223,7 +223,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                     l.LicenseSoftwares.Select(ls => ls.SoftwareId).Contains(software.Id));
 
             detail.ObservableProcesses =
-                queryObservable.Select(MapperFromModelToView.MapToObservableModel).ToArray();
+                (await queryObservable.ToArrayAsync()).Select(MapperFromModelToView.MapToObservableModel);
             detail.Licenses = licenses.Select(l => MapperFromModelToView.MapToLicenseModel<LicenseModel>(l))
                 .ToArray();
             response.Detail = detail;
@@ -272,7 +272,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                         });
             }
 
-            var filter = this.GetFilter(request);
+            var filter = GetFilter(request);
             var filteredSoftwares = unitOfWork.SoftwareRepository.GetAll().Include(s => s.Publisher).Where(filter);
 
             query = filteredSoftwares.Join(
@@ -292,7 +292,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
             var totalRecords = await query.CountAsync();
 
-            var keySelector = this.GetByStructureUnitIdOrderingSelecetor(request.Ordering.Sort);
+            var keySelector = GetByStructureUnitIdOrderingSelecetor(request.Ordering.Sort);
             var softwares =
                 (string.IsNullOrEmpty(request.Ordering.Order) || request.Ordering.Order.ToLower() != "desc")
                     ? query.OrderBy(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize)
@@ -301,16 +301,16 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                         .Take(request.Paging.PageSize);
 
             var items =
-                softwares.Select(
+                (await softwares.ToArrayAsync()).Select(
                     sms =>
-                        MapperFromModelToView.MapToSoftwareModel<SoftwareModel>(sms.Software, sms)).ToArray();
+                        MapperFromModelToView.MapToSoftwareModel<SoftwareModel>(sms.Software, sms));
             response.Model.Items = items;
             response.Model.TotalRecords = totalRecords;
             response.Status = GetByStructureUnitIdStatus.Success;
             return response;
         }
 
-        private Expression<Func<Software, bool>> GetFilter(GetByStructureUnitIdRequest request)
+        private static Expression<Func<Software, bool>> GetFilter(GetByStructureUnitIdRequest request)
         {
             if (request.FilterItems.ContainsKey("Name") && !string.IsNullOrEmpty(request.FilterItems["Name"]))
             {
@@ -334,15 +334,15 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return s => true;
         }
 
-        public SoftwareCollection GetForAutocomplete(Guid structureUnitId,
+        public async Task<SoftwareCollection> GetForAutocomplete(Guid structureUnitId,
             string contains,
             bool? includeSubUnits = false)
         {
             contains = contains.ToLower();
             var dbContext = dbFactory.CreateDbContext();
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
-            var structureUnit =
-                unitOfWork.StructureUnitRepository.Query(su => su.UniqueId == structureUnitId).Single();
+            var structureUnit = await
+                unitOfWork.StructureUnitRepository.Query(su => su.UniqueId == structureUnitId).SingleAsync();
 
             IQueryable<Machine> machines;
 
@@ -365,7 +365,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 .Where(s => s.Name.ToLower().Contains(contains) || s.Version.ToLower().Contains(contains))
                 .Distinct();
 
-            var softwares = query.OrderBy(u => u.Name);
+            var softwares = await query.OrderBy(u => u.Name).ToArrayAsync();
             var softwareModels =
                 Enumerable.ToArray(softwares.Select(MapperFromModelToView.MapToSoftwareModel<SoftwareModel>));
             var result = new SoftwareCollection(string.Empty, string.Empty)

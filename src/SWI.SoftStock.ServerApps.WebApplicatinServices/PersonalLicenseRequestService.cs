@@ -75,7 +75,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 query.OrderByDescending(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
 
             var items =
-                licenseRequests.Select(MapperFromModelToView.MapToPersonalLicenseRequestModel).ToArray();
+                (await licenseRequests.ToArrayAsync()).Select(MapperFromModelToView.MapToPersonalLicenseRequestModel);
             response.Model.Items = items;
             response.Model.TotalRecords = totalRecords;
             response.Status = GetByUserIdStatus.Success;
@@ -168,7 +168,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 StatusDateTime =
                     licenseRequest.CurrentStatusDateTime
             });
-            unitOfWork.Save();
+            await unitOfWork.SaveAsync();
             return AnswerPersonalLicenseRequestStatus.Success;
         }
 
@@ -182,7 +182,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         #endregion
 
-        private Expression<Func<LicenseRequest, object>> GetByUserIdOrderingSelecetor(string sort)
+        private static Expression<Func<LicenseRequest, object>> GetByUserIdOrderingSelecetor(string sort)
         {
             Expression<Func<LicenseRequest, object>> keySelector = m => m.User.UserName;
             SortModel[] sortModels = LicenseRequestModel.GetSorting();

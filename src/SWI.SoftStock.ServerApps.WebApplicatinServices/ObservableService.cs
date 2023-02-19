@@ -37,7 +37,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                        : null;
         }
 
-        public GetAllResponse GetAll(GetAllRequest request)
+        public async Task<GetAllResponse> GetAll(GetAllRequest request)
         {
             GetAllResponse response = new GetAllResponse
             {
@@ -55,20 +55,19 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             {
                 query = query.Where(o => o.Software.UniqueId == request.FilterSoftwareId);
             }
-            int totalRecords = query.Count();
+            int totalRecords = await query.CountAsync();
             var keySelector = GetAllOrderingSelecetor(request.Ordering.Sort);
             IEnumerable<Observable> observables;
             if (string.IsNullOrEmpty(request.Ordering.Order) || request.Ordering.Order.ToLower() != "desc")
             {
-                observables = query.OrderBy(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
+                observables = await query.OrderBy(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize).ToArrayAsync();
             }
             else
             {
-                observables =
-                    query.OrderByDescending(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
-            }
-            ObservableModelEx[] items = observables.Select(MapperFromModelToView.MapToObservableModelEx).ToArray();
-            response.Model.Items = items;
+                observables = await
+                    query.OrderByDescending(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize).ToArrayAsync();
+            }          
+            response.Model.Items = observables.Select(MapperFromModelToView.MapToObservableModelEx);
             response.Model.TotalRecords = totalRecords;
             response.Status = GetAllStatus.Success;
             return response;
@@ -98,7 +97,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 }
                 observable = MapperFromViewToModel.MapToObservable(modelEx, cId, software.Id, createdByUserId);
                 unitOfWork.ObservableRepository.Add(observable);
-                unitOfWork.Save();
+                await unitOfWork.SaveAsync();
             }
             status = ObservableCreationStatus.Success;
             return new Tuple<Guid?, ObservableCreationStatus>(observable.UniqueId, status);
@@ -145,7 +144,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                     CreatedOn = DateTime.UtcNow
                 };
                 unitOfWork.MachineObservedProcessRepository.Add(machineObservedProcess);
-                unitOfWork.Save();
+                await unitOfWork.SaveAsync();
             }
             status = ObservableAppendStatus.Success;
             return new Tuple<Guid?, ObservableAppendStatus>(machineObservedProcess.UniqueId, status);
@@ -166,7 +165,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                     }
                     unitOfWork.ProcessRepository.DeleteRange(machineObservedProcess.Processes.ToArray());
                     unitOfWork.MachineObservedProcessRepository.Delete(machineObservedProcess);
-                    unitOfWork.Save();
+                    await unitOfWork.SaveAsync();
                 }
                 return ObservableRemoveStatus.Success;
             }
@@ -190,7 +189,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                         return ObservableDeleteStatus.AppendedToMachine;
                     }
                     unitOfWork.ObservableRepository.Delete(observable);
-                    unitOfWork.Save();
+                    await unitOfWork.SaveAsync();
                 }
                 return ObservableDeleteStatus.Success;
             
@@ -198,7 +197,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         #endregion
 
-        private Expression<Func<Observable, object>> GetAllOrderingSelecetor(string sort)
+        private static Expression<Func<Observable, object>> GetAllOrderingSelecetor(string sort)
         {
             Expression<Func<Observable, object>> keySelector = (m) => m.ProcessName;
             SortModel[] sortModels = ObservableModelEx.GetSorting();

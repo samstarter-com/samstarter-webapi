@@ -35,7 +35,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
 
         [HttpGet]
         [Route("")]
-        public IActionResult Observables([FromQuery] PagingModel paging, [FromQuery] OrderingModel ordering,
+        public async Task<IActionResult> Observables([FromQuery] PagingModel paging, [FromQuery] OrderingModel ordering,
             [FromQuery] string prname = null, [FromQuery] Guid? fsid = null)
         {          
             var companyId = this.userService.GetCompanyId(Guid.Parse(UserId));
@@ -48,7 +48,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
                 Ordering = MapperFromViewToModel.MapToOrdering(ordering)
             };
 
-            GetAllResponse response = this.observableService.GetAll(request);
+            GetAllResponse response = await this.observableService.GetAll(request);
             var result = new
             {
                 items = response.Model.Items,

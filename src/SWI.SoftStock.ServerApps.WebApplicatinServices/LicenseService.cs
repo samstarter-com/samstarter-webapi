@@ -33,7 +33,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             this.dbFactory = dbFactory ?? throw new ArgumentNullException(nameof(dbFactory));
         }
 
-        private Expression<Func<License, object>> GetByStructureUnitIdOrderingSelecetor(string sort)
+        private static Expression<Func<License, object>> GetByStructureUnitIdOrderingSelecetor(string sort)
         {
             Expression<Func<License, object>> keySelector = m => m.Name;
             var sortModels = LicenseModel.GetSorting();
@@ -83,7 +83,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return keySelector;
         }
 
-        private string GetTickText(BarChartRangeType barChartRange, DateTime @from, DateTime to)
+        private static string GetTickText(BarChartRangeType barChartRange, DateTime @from, DateTime to)
         {
             string result = barChartRange switch
             {
@@ -97,7 +97,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return result;
         }
 
-        private T FillLicenseUsageRequest<T>(T request) where T : IGetLicenseUsageRequest
+        private static T FillLicenseUsageRequest<T>(T request) where T : IGetLicenseUsageRequest
         {
             if (!request.Range.HasValue)
             {
@@ -152,7 +152,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return request;
         }
 
-        private int TickCount(DateTime to, DateTime from, BarChartRangeType range)
+        private static int TickCount(DateTime to, DateTime from, BarChartRangeType range)
         {
             var result = 0;
 
@@ -177,7 +177,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return result;
         }
 
-        private long GetTickLength(DateTime from, BarChartRangeType range)
+        private static long GetTickLength(DateTime from, BarChartRangeType range)
         {
             long tickLength = 0;
             switch (range)
@@ -201,7 +201,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return tickLength;
         }
 
-        private Expression<Func<LicenseUsageMachineModel, object>> GetLicenseUsageListOrderingSelecetor(string sort)
+        private static Expression<Func<LicenseUsageMachineModel, object>> GetLicenseUsageListOrderingSelecetor(string sort)
         {
             Expression<Func<LicenseUsageMachineModel, object>> keySelector = m => m.Name;
             var sortModels = LicenseUsageMachineModel.GetSorting();
@@ -324,7 +324,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                         .Take(request.Paging.PageSize);
 
 
-            response.Model.Items = licenses.Select(MapperFromModelToView.MapToLicenseModel<LicenseModel>).ToArray();
+            response.Model.Items = (await licenses.ToArrayAsync()).Select(MapperFromModelToView.MapToLicenseModel<LicenseModel>);
             response.Model.TotalRecords = totalRecords;
             response.Status = GetByStructureUnitIdStatus.Success;
             return response;
@@ -546,7 +546,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
                 license = MapperFromViewToModel.MapToLicense(model, structureUnit, softwares);
                 unitOfWork.LicenseRepository.Add(license);
-                unitOfWork.Save();
+                await unitOfWork.SaveAsync();
             }
             result.Status = LicenseCreationStatus.Success;
             result.LicenseUniqueId = license.UniqueId;
@@ -733,7 +733,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
             if (changed)
             {
-                unitOfWork.Save();
+                await unitOfWork.SaveAsync();
             }
 
             return LicenseUpdateStatus.Success;
@@ -754,7 +754,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             try
             {
                 unitOfWork.LicenseRepository.Delete(license);
-                unitOfWork.Save();
+                await unitOfWork.SaveAsync();
             }
             catch (Exception e)
             {

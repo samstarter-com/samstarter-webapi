@@ -65,7 +65,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             try
             {
                 unitOfWork.StructureUnitRepository.Delete(structureUnit);
-                unitOfWork.Save();
+                await unitOfWork.SaveAsync();
             }
             catch (Exception e)
             {
@@ -109,7 +109,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 StructureUnit structureUnit = res.Item1;
                 if (res.Item2 == StructureUnitCreationStatus.Success)
                 {
-                    Add(structureUnit);
+                    await Add(structureUnit);
                     return new Tuple<Guid?, StructureUnitCreationStatus>(structureUnit.UniqueId, res.Item2);
                 }
                 return null;
@@ -297,13 +297,13 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return false;
         }
 
-        private void Add(StructureUnit structureUnit)
+        private async Task Add(StructureUnit structureUnit)
         {
             var dbContext = dbFactory.CreateDbContext();
 
             using IUnitOfWork unitOfWork = new UnitOfWork(dbContext);
             unitOfWork.StructureUnitRepository.Add(structureUnit);
-            unitOfWork.Save();
+            await unitOfWork.SaveAsync();
         }
 
         private async Task<Tuple<StructureUnit, StructureUnitCreationStatus>> Create(StructureUnitModel model, Guid parentId)
@@ -399,7 +399,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return existCompanyUniqueId != parentCompanyUniqueId;
         }
 
-        private StructureUnitDeleteStatus CheckBeforeDelete(StructureUnit structureUnit)
+        private static StructureUnitDeleteStatus CheckBeforeDelete(StructureUnit structureUnit)
         {
             var result = StructureUnitDeleteStatus.None;
             if (structureUnit.ChildStructureUnits != null && structureUnit.ChildStructureUnits.Any())

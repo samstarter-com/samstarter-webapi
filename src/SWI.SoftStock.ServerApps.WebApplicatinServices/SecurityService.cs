@@ -316,7 +316,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             }
 
          
-            var companyResult = companyService.Add(new StructureUnitModel { Name = company });
+            var companyResult = await companyService.Add(new StructureUnitModel { Name = company });
             if (companyResult.Status != CompanyCreationStatus.Success)
             {
                 status = RegisterCompanyStatus.ProviderError;

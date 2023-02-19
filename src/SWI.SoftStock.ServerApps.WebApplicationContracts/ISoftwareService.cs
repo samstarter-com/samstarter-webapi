@@ -18,7 +18,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationContracts
 
         Task<GetByStructureUnitIdResponse> GetByStructureUnitIdAsync(GetByStructureUnitIdRequest request);
 
-		SoftwareCollection GetForAutocomplete(Guid value, string contains, bool? includeSubUnits = false);
+		Task<SoftwareCollection> GetForAutocomplete(Guid value, string contains, bool? includeSubUnits = false);
 
 		Task<GetSoftwaresByMachineIdResponse> GetByMachineId(GetSoftwaresByMachineIdRequest request);
 
