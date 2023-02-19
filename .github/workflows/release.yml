@@ -1,0 +1,50 @@
+name: .NET
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+  
+jobs:
+  release:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: | 
+          6.0.x
+          7.0.x
+    - name: Install GitVersion
+      uses: gittools/actions/gitversion/setup@v0.9.7
+      with:
+        versionSpec: '5.x'
+    - name: Determine Version
+      uses: gittools/actions/gitversion/execute@v0.9.7
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.ACCESS_KEY }}
+        aws-secret-access-key: ${{ secrets.SECRET_KEY }}
+        aws-region: us-east-1
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+    - name: Build
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        push: true
+        file: ${{ github.workspace }}/Dockerfile
+        tags: ${{ steps.variables.outputs.image-name }}
+    - name: Tag commit
+      run: |
+        git tag ${{ steps.variables.outputs.version }}
+        git push origin ${{ steps.variables.outputs.version }}        

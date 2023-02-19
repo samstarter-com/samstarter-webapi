@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using SWI.SoftStock.ServerApps.DataModel2;
+using SWI.SoftStock.ServerApps.WebApplicationContracts;
 using SWI.SoftStock.ServerApps.WebApplicationServices;
 using SWI.SoftStock.WebApi.Authentication;
 using SWI.SoftStock.WebApi.Common;
@@ -12,7 +13,6 @@ using System;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
-using SWI.SoftStock.ServerApps.WebApplicationContracts;
 
 namespace SWI.SoftStock.WebApi
 {
