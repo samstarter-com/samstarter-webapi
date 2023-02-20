@@ -46,7 +46,7 @@ jobs:
     - name: Build
       uses: docker/build-push-action@v2
       with:
-        context: ./../..
+        context: .
         push: true
         file: ${{ github.workspace }}/src/SWI.SoftStock.WebApi.IIS2/Dockerfile
         tags: ${{ steps.variables.outputs.image-name }}
