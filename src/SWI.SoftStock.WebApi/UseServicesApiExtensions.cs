@@ -25,9 +25,9 @@ namespace SWI.SoftStock.WebApi
             //          configuration.GetConnectionString("DefaultConnection")));
 
             // services.AddSingleton<MainDbContextFactory>();
-            services.AddDbContextFactory<ApplicationDbContext>(options => options
-                .UseLazyLoadingProxies()
-                .UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+            services.AddDbContextFactory<MainDbContext>(options => options
+              .UseLazyLoadingProxies()
+              .UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
             services.AddScoped<ISecurityService, SecurityService>();
 
