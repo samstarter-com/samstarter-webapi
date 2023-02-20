@@ -34,7 +34,6 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
             this.licensingService = licensingService;
         }
 
-
         [HttpPost]
         [Route("{licenseId}/licensemachine/{machineId}")]
         public async Task<IActionResult> LicenseMachine(Guid licenseId, Guid machineId)

@@ -68,9 +68,9 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
 
         [HttpGet]
         [Route("{observableId}")]
-        public IActionResult GetById(Guid observableId)
+        public async Task<IActionResult> GetById(Guid observableId)
         {
-            var data = new { Details = this.observableService.GetObservableModelById(observableId) };
+            var data = new { Details = await this.observableService.GetObservableModelById(observableId) };
             return this.Ok(data);
         }
 

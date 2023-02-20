@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SWI.SoftStock.ServerApps.WebApplicationContracts;
 using SWI.SoftStock.WebApi.Common;
 using System;
 using System.Threading.Tasks;
-using SWI.SoftStock.ServerApps.WebApplicationContracts;
 
 namespace SWI.SoftStock.WebApi.Controllers.Management
 {

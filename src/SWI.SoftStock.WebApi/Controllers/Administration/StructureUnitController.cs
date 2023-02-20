@@ -39,13 +39,13 @@ namespace SWI.SoftStock.WebApi.Controllers.Administrations
 
         [Route("")]
         [HttpGet]
-        public IActionResult StructureUnits([FromQuery] StructureUnitsRequestModel request)
+        public async Task<IActionResult> StructureUnits([FromQuery] StructureUnitsRequestModel request)
         {
             const string role = "Admin";
 
             var parsed = Guid.TryParse(request?.SelectedStructureUnitId, out var uniqueId);           
 
-            var tree = this.structureUnitService.GetStructureUnitModels(Guid.Parse(UserId),
+            var tree = await this.structureUnitService.GetStructureUnitModels(Guid.Parse(UserId),
                 parsed
                     ? uniqueId
                     : null,
@@ -68,11 +68,11 @@ namespace SWI.SoftStock.WebApi.Controllers.Administrations
             var adminRoleId = this.rolemanager.Roles.Single(r => r.Name == Constants.RoleAdministrator).Id;
             var detail = await this.structureUnitService.GetByUniqueId(uniqueId);
             detail.IsRootUnit = detail.ParentUniqueId == null || (await this.userService.GetUserRoles(detail.ParentUniqueId.Value, userGuid)).All(urm => urm.RoleId != adminRoleId);
-
+            var userRoles = await this.userService.GetStructureUnitUserRoles(uniqueId);
             return this.Ok(new
             {
                 Details = detail,
-                UsersRoles = this.userService.GetStructureUnitUserRoles(uniqueId)
+                UsersRoles = userRoles
             });
         }
 

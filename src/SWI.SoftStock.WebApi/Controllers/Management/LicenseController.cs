@@ -89,25 +89,25 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
 
         [HttpGet]
         [Route("{licenseId}")]
-        public IActionResult GetById(Guid licenseId)
+        public async Task<IActionResult> GetById(Guid licenseId)
         {
-            var data = new { Details = this.licenseService.GetLicenseModelById(licenseId) };
+            var data = new { Details = await this.licenseService.GetLicenseModelById(licenseId) };
             return this.Ok(data);
         }
 
         [HttpGet]
         [Route("detail/{licenseId}")]
-        public IActionResult GetDetailById(Guid licenseId)
+        public async Task<IActionResult> GetDetailById(Guid licenseId)
         {
-            var data = new { Details = this.licenseService.GetLicenseModelExById(licenseId) };
+            var data = new { Details = await this.licenseService.GetLicenseModelExById(licenseId) };
             return this.Ok(data);
         }
 
         [HttpGet]
         [Route("licensetypes")]
-        public IActionResult GetLicenseTypes()
+        public async Task<IActionResult> GetLicenseTypes()
         {
-            var data = this.licenseService.GetLicenseTypes();
+            var data = await this.licenseService.GetLicenseTypes();
             return this.Ok(data);
         }
 
@@ -328,7 +328,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Management
             var writer = new StreamWriter(memoryStream);
 
             await writer.WriteAsync($"Name;License type;License count;Available license count;Structure unit;Start date;Expiration date;{Environment.NewLine}");
-            foreach (var license in model.Items)
+            foreach (var license in ((LicenseCollection)null).Items)
             {
                 await writer.WriteAsync($"{license.Name};{license.LicenseTypeName};{license.Count};{license.AvailableCount};{license.StructureUnitName};{license.BeginDate};{license.ExpirationDate};{Environment.NewLine}");
             }
