@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using SWI.SoftStock.ServerApps.DataModel2;
+using SWI.SoftStock.ServerApps.WebApplicationContracts;
 using SWI.SoftStock.ServerApps.WebApplicationContracts.CompanyService.Add;
 using SWI.SoftStock.ServerApps.WebApplicationModel;
 using SWI.SoftStock.ServerApps.WebApplicationServices;
@@ -11,7 +12,7 @@ namespace SWI.SoftStock.WebApi.Tests
     public class CompanyServiceUnitTest
     {
         private readonly MainDbContext context;
-        private CompanyService companyService;
+        private readonly ICompanyService companyService;
 
         public CompanyServiceUnitTest()
         {
