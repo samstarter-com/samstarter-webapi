@@ -74,9 +74,16 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 query.OrderBy(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize) :
                 query.OrderByDescending(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
 
-            var items =
-                (await licenseRequests.ToArrayAsync()).Select(MapperFromModelToView.MapToPersonalLicenseRequestModel);
-            response.Model.Items = items;
+            var items = await licenseRequests
+                .Include(l => l.Machine)
+                .Include(l => l.Software)
+                .Include(l => l.Software.Publisher)
+                .Include(l => l.User)
+                .Include(l => l.LicenseRequestHistories)
+                .Include(l => l.LicenseRequestDocuments)
+                .AsSplitQuery()
+                .ToArrayAsync();
+            response.Model.Items = items.Select(MapperFromModelToView.MapToPersonalLicenseRequestModel);
             response.Model.TotalRecords = totalRecords;
             response.Status = GetByUserIdStatus.Success;
             return response;

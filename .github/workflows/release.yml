@@ -50,6 +50,23 @@ jobs:
         push: true
         file: ${{ github.workspace }}/src/SWI.SoftStock.WebApi.IIS2/Dockerfile
         tags: ${{ steps.variables.outputs.image-name }}
+    - name: Download task def
+      run: |
+        aws ecs describe-task-definition --task-definition samstarter-webapi-task --query taskDefinition > task-definition.json
+    - name: Fill in the new image ID in the Amazon ECS task definition
+      id: task-def
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: task-definition.json
+        container-name: samstarter-webapi
+        image: steps.variables.outputs.image-name
+    - name: Deploy Amazon ECS task definition
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      with:
+        task-definition: ${{ steps.task-def.outputs.task-definition }}
+        service: samstarter-webapi-service
+        cluster: samstarter-webapi
+        wait-for-service-stability: true
     - name: Tag commit
       run: |
         git tag ${{ steps.variables.outputs.version }}

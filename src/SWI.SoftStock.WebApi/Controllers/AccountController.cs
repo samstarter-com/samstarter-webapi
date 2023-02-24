@@ -180,7 +180,7 @@ namespace SWI.SoftStock.WebApi.Controllers
                 this.expiredTokenValidationParameters,
                 out var securityToken);
 
-            if (!(securityToken is JwtSecurityToken jwtSecurityToken) ||
+            if (securityToken is not JwtSecurityToken jwtSecurityToken ||
                 !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256Signature,
                     StringComparison.InvariantCultureIgnoreCase))
                 throw new SecurityTokenException("Invalid token");
