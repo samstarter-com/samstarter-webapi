@@ -1,23 +1,20 @@
+using Microsoft.EntityFrameworkCore;
 using SWI.SoftStock.ServerApps.DataAccess2;
 using SWI.SoftStock.ServerApps.DataModel2;
 using SWI.SoftStock.ServerApps.WebApplicationContracts;
+using SWI.SoftStock.ServerApps.WebApplicationContracts.ObservableService.Add;
+using SWI.SoftStock.ServerApps.WebApplicationContracts.ObservableService.Append;
+using SWI.SoftStock.ServerApps.WebApplicationContracts.ObservableService.GetAll;
 using SWI.SoftStock.ServerApps.WebApplicationContracts.Statuses;
 using SWI.SoftStock.ServerApps.WebApplicationModel;
 using SWI.SoftStock.ServerApps.WebApplicationModel.Collections;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 
 namespace SWI.SoftStock.ServerApps.WebApplicationServices
 {
-    using Microsoft.EntityFrameworkCore;
-    using SWI.SoftStock.ServerApps.WebApplicationContracts.ObservableService.Add;
-    using SWI.SoftStock.ServerApps.WebApplicationContracts.ObservableService.Append;
-    using SWI.SoftStock.ServerApps.WebApplicationContracts.ObservableService.GetAll;
-    using SWI.SoftStock.ServerApps.WebApplicationContracts.StructureUnitService.CreateAndAdd;
-    using System.Threading.Tasks;
-
     public class ObservableService : IObservableService
     {
         private readonly IDbContextFactory<MainDbContext> dbFactory;
@@ -42,7 +39,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public async Task<GetAllResponse> GetAll(GetAllRequest request)
         {
-            GetAllResponse response = new GetAllResponse
+            var response = new GetAllResponse
             {
                 Model = new ObservableExCollection(request.Ordering.Order, request.Ordering.Sort)
             };
@@ -60,17 +57,25 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             }
             int totalRecords = await query.CountAsync();
             var keySelector = GetAllOrderingSelecetor(request.Ordering.Sort);
-            IEnumerable<Observable> observables;
+            IQueryable<Observable> observables;
             if (string.IsNullOrEmpty(request.Ordering.Order) || request.Ordering.Order.ToLower() != "desc")
             {
-                observables = await query.OrderBy(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize).ToArrayAsync();
+                observables = query.OrderBy(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
             }
             else
             {
-                observables = await
-                    query.OrderByDescending(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize).ToArrayAsync();
-            }          
-            response.Model.Items = observables.Select(MapperFromModelToView.MapToObservableModelEx);
+                observables =
+                    query.OrderByDescending(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
+            }
+            var items = await observables
+                .Include(o => o.Software)
+                .Include(o => o.Software.Publisher)
+                .Include(o => o.CreatedByUser)
+                .Include(o => o.MachineObservedProcesses)
+                .ThenInclude(mop => mop.Machine)
+                .AsSplitQuery()
+                .ToArrayAsync();
+            response.Model.Items = items.Select(MapperFromModelToView.MapToObservableModelEx);
             response.Model.TotalRecords = totalRecords;
             response.Status = GetAllStatus.Success;
             return response;
@@ -150,7 +155,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                 await unitOfWork.SaveAsync();
             }
             status = ObservableAppendStatus.Success;
-            return new AppendResponse() { ObservableId = machineObservedProcess.UniqueId,  Status = status };
+            return new AppendResponse() { ObservableId = machineObservedProcess.UniqueId, Status = status };
         }
 
         public async Task<ObservableRemoveStatus> Remove(Guid machineId, Guid observableId)
@@ -176,26 +181,26 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         public async Task<ObservableDeleteStatus> Delete(Guid observableId)
         {
-            
-                var dbContext = dbFactory.CreateDbContext();
-                using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
+
+            var dbContext = dbFactory.CreateDbContext();
+            using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
+            {
+                Observable observable = await
+                    unitOfWork.ObservableRepository.GetAll().SingleOrDefaultAsync(
+                        l => l.UniqueId == observableId);
+                if (observable == null)
                 {
-                    Observable observable = await
-                        unitOfWork.ObservableRepository.GetAll().SingleOrDefaultAsync(
-                            l => l.UniqueId == observableId);
-                    if (observable == null)
-                    {
-                        return ObservableDeleteStatus.NotExist;
-                    }
-                    if (observable.MachineObservedProcesses.Any())
-                    {
-                        return ObservableDeleteStatus.AppendedToMachine;
-                    }
-                    unitOfWork.ObservableRepository.Delete(observable);
-                    await unitOfWork.SaveAsync();
+                    return ObservableDeleteStatus.NotExist;
                 }
-                return ObservableDeleteStatus.Success;
-            
+                if (observable.MachineObservedProcesses.Any())
+                {
+                    return ObservableDeleteStatus.AppendedToMachine;
+                }
+                unitOfWork.ObservableRepository.Delete(observable);
+                await unitOfWork.SaveAsync();
+            }
+            return ObservableDeleteStatus.Success;
+
         }
 
         #endregion

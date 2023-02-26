@@ -5,7 +5,6 @@ namespace SWI.SoftStock.ServerApps.WebApplicationContracts.StructureUnitService.
 {
     public  class GetStructureUnitModelsResponse
     {
-        public IEnumerable<StructureUnitTreeItemModel> StructureUnits { get; set; }
-        public StructureUnitModel StructureUnit { get; set; }
+        public IEnumerable<StructureUnitTreeItemModel> StructureUnits { get; set; }      
     }
 }

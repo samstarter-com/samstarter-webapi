@@ -185,11 +185,9 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
         public async Task<GetStructureUnitModelsResponse> GetStructureUnitModels(Guid userId,
             Guid? selectedId,
             string[] roles)
-        {
-            StructureUnitModel selectedStructureUnit;
+        {           
             IList<StructureUnitTreeItemModel> result = new List<StructureUnitTreeItemModel>();
-            var dbContext = dbFactory.CreateDbContext();
-            selectedStructureUnit = null;
+            var dbContext = dbFactory.CreateDbContext();           
             using (IUnitOfWork unitOfWork = new UnitOfWork(dbContext))
             {
                 var surs = await unitOfWork.StructureUnitUserRoleRepository.GetAll()
@@ -215,13 +213,9 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                         {
                             IsSelected = structureUnit.UniqueId == selectedId
                         }
-                    };
-                    if (r.State.IsSelected)
-                    {
-                        selectedStructureUnit = MapperFromModelToView.MapToStructureModel(structureUnit);
-                    }
+                    };                    
 
-                    r.ChildUnits = GetChildUnits(childStructureUnits, selectedId, r, ref selectedStructureUnit);
+                    r.ChildUnits = GetChildUnits(childStructureUnits, selectedId, r);
                     result.Add(r);
                 }
                 var toRemove = result.Reverse().Where(r => IsExistInTree(r.UniqueId, result)).AsEnumerable();
@@ -230,7 +224,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                     result.Remove(tr);
                 }
             }
-            return new GetStructureUnitModelsResponse { StructureUnits = result, StructureUnit = selectedStructureUnit };
+            return new GetStructureUnitModelsResponse { StructureUnits = result };
         }
 
         public async Task<GetCompanyIdByNameResponse> GetCompanyIdByName(string companyName)
@@ -347,8 +341,7 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
 
         private IEnumerable<StructureUnitTreeItemModel> GetChildUnits(IEnumerable<StructureUnit> structureUnits,
             Guid? selectedId,
-            StructureUnitTreeItemModel parent,
-            ref StructureUnitModel selectedStructureUnit)
+            StructureUnitTreeItemModel parent)
         {
             IList<StructureUnitTreeItemModel> result = new List<StructureUnitTreeItemModel>();
             foreach (
@@ -362,12 +355,8 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                     Parent = parent,
                     ShortName = s.ShortName,
                     State = new StructureUnitTreeItemState(parent) { IsSelected = s.UniqueId == selectedId }
-                };
-                if (su.State.IsSelected)
-                {
-                    selectedStructureUnit = MapperFromModelToView.MapToStructureModel(s);
-                }
-                su.ChildUnits = GetChildUnits(structureUnits, selectedId, su, ref selectedStructureUnit);
+                };              
+                su.ChildUnits = GetChildUnits(structureUnits, selectedId, su);
                 result.Add(su);
             }
             return result;

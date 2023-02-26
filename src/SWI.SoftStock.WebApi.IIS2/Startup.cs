@@ -69,7 +69,7 @@ namespace SWI.SoftStock.WebApi.IIS2
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
         {
            // loggerFactory.AddLog4Net();
-            app.ConfigureExceptionHandler(loggerFactory.CreateLogger("ExceptionHandler"));
+            app.ConfigureExceptionHandler();
             // Enable middleware to serve generated Swagger as a JSON endpoint.
             app.UseSwagger();
 

@@ -41,7 +41,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Administrations
         [HttpGet]
         public async Task<IActionResult> StructureUnits([FromQuery] StructureUnitsRequestModel request)
         {
-            const string role = "Admin";
+            const string role = Constants.RoleAdministrator;
 
             var parsed = Guid.TryParse(request?.SelectedStructureUnitId, out var uniqueId);           
 
@@ -50,7 +50,7 @@ namespace SWI.SoftStock.WebApi.Controllers.Administrations
                     ? uniqueId
                     : null,
                 new[] { role });
-            return this.Ok(tree);
+            return this.Ok(tree.StructureUnits);
         }
 
         [HttpGet]
