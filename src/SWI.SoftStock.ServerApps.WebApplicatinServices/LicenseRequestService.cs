@@ -239,20 +239,28 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             int totalRecords = await query.CountAsync();
 
             var keySelector = GetByStructureUnitIdOrderingSelecetor(request.Ordering.Sort);
-            IEnumerable<LicenseRequest> licenseRequests;
+            IQueryable<LicenseRequest> licenseRequests;
 
             if (string.IsNullOrEmpty(request.Ordering.Order) || request.Ordering.Order.ToLower() != "desc")
             {
-                licenseRequests = await query.OrderBy(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize).ToArrayAsync();
+                licenseRequests = query.OrderBy(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
             }
             else
             {
-                licenseRequests = await
-                    query.OrderByDescending(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize).ToArrayAsync();
+                licenseRequests = query.OrderByDescending(keySelector).Skip(request.Paging.PageIndex * request.Paging.PageSize).Take(request.Paging.PageSize);
             }
 
-            var items = licenseRequests.Select(MapperFromModelToView.MapToManagerLicenseRequestModel);
-            response.Model.Items = items;
+            var items = await licenseRequests
+                .Include(lr=>lr.Machine)
+                .Include(lr=>lr.Software)
+                .ThenInclude(s=>s.Publisher)
+                .Include(lr=>lr.LicenseRequestHistories)
+                .Include(lr=>lr.LicenseRequestDocuments)
+                .Include(lr => lr.User)
+                .AsSplitQuery()
+                .ToArrayAsync();          
+            
+            response.Model.Items = items.Select(MapperFromModelToView.MapToManagerLicenseRequestModel);
             response.Model.TotalRecords = totalRecords;
             response.Status = GetByStructureUnitIdStatus.Success;
             return response;

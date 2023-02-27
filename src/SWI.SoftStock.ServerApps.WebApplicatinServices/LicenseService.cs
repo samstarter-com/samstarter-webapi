@@ -323,8 +323,26 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
                         .Skip(request.Paging.PageIndex * request.Paging.PageSize)
                         .Take(request.Paging.PageSize);
 
+            var items = await licenses
+                .Include(l => l.LicenseType)
+                .Include(l => l.LicenseSoftwares)                
+                .ThenInclude(ls=>ls.Software)
+                .ThenInclude(s => s.Publisher)
+                .Include(l => l.LicenseSoftwares)
+                .ThenInclude(ls => ls.LicenseMachineSoftwares)
+                .ThenInclude(lms => lms.MachineSoftware)
+                .Include(l => l.Documents)
+                .Include(l => l.LicenseAlerts)
+                .ThenInclude(la => la.Assignees)
+                .ThenInclude(la => la.User)
+                .ThenInclude(u => u.StructureUnitRoles)
+                .ThenInclude(sur => sur.Role)
+                .Include(l=>l.LicenseAlerts)
+                .Include(l => l.StructureUnit)
+                .AsSplitQuery()
+                .ToArrayAsync();
 
-            response.Model.Items = (await licenses.ToArrayAsync()).Select(MapperFromModelToView.MapToLicenseModel<LicenseModel>);
+            response.Model.Items = items.Select(MapperFromModelToView.MapToLicenseModel<LicenseModel>);
             response.Model.TotalRecords = totalRecords;
             response.Status = GetByStructureUnitIdStatus.Success;
             return response;
