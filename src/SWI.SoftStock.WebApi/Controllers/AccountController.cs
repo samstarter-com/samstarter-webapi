@@ -2,11 +2,13 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using SWI.SoftStock.ServerApps.DataModel2;
+using SWI.SoftStock.ServerApps.WebApplicationContracts;
 using SWI.SoftStock.ServerApps.WebApplicationContracts.SecurityService;
 using SWI.SoftStock.ServerApps.WebApplicationContracts.SecurityService.RegisterCompany;
 using SWI.SoftStock.ServerApps.WebApplicationContracts.SecurityService.ValidateUser;
 using SWI.SoftStock.ServerApps.WebApplicationModel;
 using SWI.SoftStock.WebApi.Authentication;
+using SWI.SoftStock.WebApi.Common;
 using SWI.SoftStock.WebApi.Mapper;
 using System;
 using System.Collections.Generic;
@@ -14,9 +16,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using SWI.SoftStock.ServerApps.WebApplicationContracts;
 using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegisteredClaimNames;
-using SWI.SoftStock.WebApi.Common;
 
 namespace SWI.SoftStock.WebApi.Controllers
 {
@@ -28,15 +28,15 @@ namespace SWI.SoftStock.WebApi.Controllers
         private readonly ISecurityService securityService;
         private readonly IJwtAuthManager jwtAuthManager;
         private readonly IUserService userService;
-        private readonly ExpiredTokenValidationParameters expiredTokenValidationParameters;
 
-        public AccountController(ISecurityService securityService, IUserService userService,
-            IJwtAuthManager jwtAuthManager, ExpiredTokenValidationParameters expiredTokenValidationParameters)
+        public AccountController(ISecurityService securityService, 
+            IUserService userService,
+            IJwtAuthManager jwtAuthManager
+            )
         {
             this.securityService = securityService;
             this.jwtAuthManager = jwtAuthManager;
             this.userService = userService;
-            this.expiredTokenValidationParameters = expiredTokenValidationParameters;
         }
 
         [Route("ChangePassword")]
@@ -174,11 +174,8 @@ namespace SWI.SoftStock.WebApi.Controllers
         [HttpPost]
         [Route("refresh")]
         public async Task<ActionResult> Refresh([FromBody] RefreshModel refreshModel)
-        {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var principal = tokenHandler.ValidateToken(refreshModel.AccessToken,
-                this.expiredTokenValidationParameters,
-                out var securityToken);
+        {           
+            var principal = jwtAuthManager.ValidateToken(refreshModel.AccessToken, out var securityToken);
 
             if (securityToken is not JwtSecurityToken jwtSecurityToken ||
                 !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256Signature,

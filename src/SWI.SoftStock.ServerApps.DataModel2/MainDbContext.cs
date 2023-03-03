@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SWI.SoftStock.ServerApps.DataModel2.Identity.Models;
 using System;
 using System.Linq;
@@ -7,11 +8,15 @@ using System.Threading.Tasks;
 
 namespace SWI.SoftStock.ServerApps.DataModel2
 {
-    public class MainDbContext : ApplicationDbContext
+    public class MainDbContext : IdentityDbContext<User, CustomRole, Guid>
     {
         public MainDbContext(DbContextOptions<MainDbContext> options) : base(options)
         {
         }
+
+        protected MainDbContext(DbContextOptions options) : base(options)
+        {
+        } 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

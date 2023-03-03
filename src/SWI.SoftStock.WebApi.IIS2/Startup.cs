@@ -1,11 +1,14 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using SWI.SoftStock.ServerApps.DataModel2;
 using SWI.SoftStock.ServerApps.MailSender;
 using System.Collections.Generic;
+using System.Configuration;
 
 namespace SWI.SoftStock.WebApi.IIS2
 {
@@ -22,6 +25,10 @@ namespace SWI.SoftStock.WebApi.IIS2
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddDbContextFactory<MainDbContext>(options => options
+              .UseLazyLoadingProxies()
+              .UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+
             services.AddOAuth(Configuration);
             services.AddServicesApi(Configuration);
             services.AddMailSender(Configuration);
