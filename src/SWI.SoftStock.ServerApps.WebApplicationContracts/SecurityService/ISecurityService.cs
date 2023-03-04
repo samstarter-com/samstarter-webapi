@@ -22,7 +22,6 @@ namespace SWI.SoftStock.ServerApps.WebApplicationContracts.SecurityService
 
         Task<bool> VerifyAsync(string userId, string code);
 
-        Task<ChangePasswordResponse> ChangePassword(string userId, string currentPassword, string newPassword);
-        bool IsValidUserCredentials(string requestUserName, string requestPassword);
+        Task<ChangePasswordResponse> ChangePassword(string userId, string currentPassword, string newPassword); 
     }
 }

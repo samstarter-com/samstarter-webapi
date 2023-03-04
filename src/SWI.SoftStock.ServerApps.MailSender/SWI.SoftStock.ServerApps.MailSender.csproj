@@ -10,7 +10,6 @@
   </ItemGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\SWI.SoftStock.Common.Dto2\SWI.SoftStock.Common.Dto2.csproj" />
     <ProjectReference Include="..\SWI.SoftStock.ServerApps.WebApplicatinServices\SWI.SoftStock.ServerApps.WebApplicationServices.csproj" />
   </ItemGroup>
   

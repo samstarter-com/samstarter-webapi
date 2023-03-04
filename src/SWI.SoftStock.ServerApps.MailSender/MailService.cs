@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using MimeKit;
 using MimeKit.Text;
-using SWI.SoftStock.Common.Dto2;
 using SWI.SoftStock.ServerApps.DataModel2;
 using SWI.SoftStock.ServerApps.DataModel2.Identity;
 using SWI.SoftStock.ServerApps.MailSender.Properties;

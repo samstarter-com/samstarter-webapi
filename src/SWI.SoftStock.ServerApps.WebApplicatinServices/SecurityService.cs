@@ -414,11 +414,5 @@ namespace SWI.SoftStock.ServerApps.WebApplicationServices
             return new ChangePasswordResponse()
                 {Success = identityResult.Succeeded, Errors = identityResult.Errors.Select(e => e.Description)};
         }
-
-        /// <inheritdoc />
-        public bool IsValidUserCredentials(string requestUserName, string requestPassword)
-        {
-            throw new NotImplementedException();
-        } 
     }
 }

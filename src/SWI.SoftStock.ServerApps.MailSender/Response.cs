@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace SWI.SoftStock.Common.Dto2
+﻿namespace SWI.SoftStock.ServerApps.MailSender
 {
     /// <summary>
     /// Response from service
@@ -16,8 +14,5 @@ namespace SWI.SoftStock.Common.Dto2
         /// If Code!=0 then Message contains error details
         /// </summary>
         public string Message { get; set; }
-
-        public Guid UniqueId { get; set; }
     }
-
 }
